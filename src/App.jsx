@@ -7,19 +7,16 @@ export default function SwissTennisRanking() {
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Decay-Berechnung: Linear 0.82 bis 1.00 bei 24 Spielen
   function estimateDecay(numSpiele) {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
-  // Parser für beide Formate + Walkover
   const parseInput = () => {
     try {
       const lines = inputText.trim().split(/\n+/);
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
-        // Turnier-Format (7 Zeilen-Block)
         if (
           i + 6 < lines.length &&
           /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
@@ -34,7 +31,6 @@ export default function SwissTennisRanking() {
           i += 7;
           continue;
         }
-        // Interclub-Format (8 Zeilen-Block)
         if (
           i + 7 < lines.length &&
           /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
@@ -49,7 +45,6 @@ export default function SwissTennisRanking() {
           i += 8;
           continue;
         }
-        // Generisch
         if (/^[0-9]+\.[0-9]+$/.test(lines[i].trim())) {
           const wwLine = lines[i].trim();
           const name = (i > 0 ? lines[i - 1].trim() : "Unbekannt");
@@ -91,19 +86,16 @@ export default function SwissTennisRanking() {
     setMatches([]);
   };
 
-  // Berechnung mit Decay nach Spielanzahl + Streichresultaten
   const calculate = () => {
     let wins = matches.filter((m) => m.result === "S");
     let losses = matches
       .map((m, i) => ({ ...m, index: i }))
       .filter((m) => m.result === "N");
 
-    // Nur echte Spiele zählen
     const numGames = wins.length + losses.length;
     const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
-    // Streichresultate
     const numStreich = Math.floor(numGames / 6);
     let gestrichenIdx = [];
     if (numStreich > 0 && losses.length > 0) {
@@ -204,7 +196,6 @@ export default function SwissTennisRanking() {
           </div>
         </div>
 
-        {/* Ergebnisbox unter den Feldern */}
         <div
           className="bg-gray-100 p-4 rounded shadow result-summary-box"
           style={{
@@ -262,6 +253,16 @@ export default function SwissTennisRanking() {
           >
             Importieren & schließen
           </button>
+          {matches.length > 0 && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="bg-red-600 text-white px-4 py-2 rounded mt-2"
+              style={{ margin: "0 auto", display: "block" }}
+            >
+              Alle Daten löschen
+            </button>
+          )}
           {errorMessage && (
             <p className="text-red-600 mt-2">{errorMessage}</p>
           )}
@@ -270,71 +271,67 @@ export default function SwissTennisRanking() {
 
       {matches.length > 0 && (
         <div className="mb-4">
-          <button
-            type="button"
-            onClick={clearAll}
-            className="bg-red-600 text-white px-4 py-2 rounded mb-2"
-          >
-            Alle Daten löschen
-          </button>
-
-          <h2 className="text-lg font-semibold mb-2">Importierte Matches:</h2>
-          <table className="min-w-full border">
-            <thead>
-              <tr>
-                <th className="border px-2">Name</th>
-                <th className="border px-2">WW Gegner</th>
-                <th className="border px-2">Resultat</th>
-                <th className="border px-2">Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matches.map((m, i) => (
-                <tr
-                  key={i}
-                  className={
-                    result.gestrichenIdx && result.gestrichenIdx.includes(i)
-                      ? "stricken-row"
-                      : ""
-                  }
-                  title={
-                    result.gestrichenIdx && result.gestrichenIdx.includes(i)
-                      ? "Streichresultat"
-                      : ""
-                  }
-                >
-                  <td className="border px-2 text-center">{m.name}</td>
-                  <td className="border px-2 text-center">{m.ww}</td>
-                  <td className="border px-2 text-center">
-                    <span
-                      className={
-                        "result-circle " +
-                        (m.result === "S"
-                          ? "result-s"
-                          : m.result === "N"
-                          ? "result-n"
-                          : m.result === "W"
-                          ? "result-w"
-                          : "")
-                      }
-                    >
-                      {m.result}
-                    </span>
-                  </td>
-                  <td className="border px-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => removeMatch(i)}
-                      className="delete-x-btn"
-                      title="Löschen"
-                    >
-                      ×
-                    </button>
-                  </td>
+          <h2 className="text-lg font-semibold mb-2" style={{ textAlign: "center" }}>
+            Importierte Matches:
+          </h2>
+          <div style={{ maxWidth: 700, margin: "0 auto" }}>
+            <table className="min-w-full border" style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th className="border px-2">Name</th>
+                  <th className="border px-2">WW Gegner</th>
+                  <th className="border px-2">Resultat</th>
+                  <th className="border px-2">Aktion</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {matches.map((m, i) => (
+                  <tr
+                    key={i}
+                    className={
+                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                        ? "stricken-row"
+                        : ""
+                    }
+                    title={
+                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                        ? "Streichresultat"
+                        : ""
+                    }
+                  >
+                    <td className="border px-2 text-center">{m.name}</td>
+                    <td className="border px-2 text-center">{m.ww}</td>
+                    <td className="border px-2 text-center">
+                      <span
+                        className={
+                          "result-circle " +
+                          (m.result === "S"
+                            ? "result-s"
+                            : m.result === "N"
+                            ? "result-n"
+                            : m.result === "W"
+                            ? "result-w"
+                            : "")
+                        }
+                      >
+                        {m.result}
+                      </span>
+                    </td>
+                    <td className="border px-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => removeMatch(i)}
+                        className="delete-x-btn"
+                        title="Löschen"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
