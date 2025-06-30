@@ -154,7 +154,7 @@ const parseInput = () => {
     const decayedWW = startWW * decay;
 
     // Streichresultate
-    const numStreich = Math.floor(numGames / 6);
+    const numStreich = Math.min(4, Math.floor(numGames / 6));
     let gestrichenIdx = [];
     if (numStreich > 0 && losses.length > 0) {
       const sortedLosses = losses
