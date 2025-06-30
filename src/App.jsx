@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 export default function SwissTennisRanking() {
   const [inputText, setInputText] = useState("");
@@ -15,24 +13,6 @@ export default function SwissTennisRanking() {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
-  // PDF Export
-  const exportPDF = async () => {
-    const content = document.getElementById("export-content");
-    if (!content) return;
-    const canvas = await html2canvas(content, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: "p",
-      unit: "pt",
-      format: "a4",
-    });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pageWidth - 40;
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, "PNG", 20, 20, pdfWidth, pdfHeight);
-    pdf.save("SwissTennis-Ranking.pdf");
-  };
 
   // Parser für beide Formate + Walkover
   const parseInput = () => {
