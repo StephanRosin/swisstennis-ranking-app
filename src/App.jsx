@@ -7,16 +7,19 @@ export default function SwissTennisRanking() {
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Decay-Berechnung: Linear 0.82 bis 1.00 bei 24 Spielen
   function estimateDecay(numSpiele) {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
+  // Parser für beide Formate + Walkover
   const parseInput = () => {
     try {
       const lines = inputText.trim().split(/\n+/);
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
+        // Turnier-Format (7 Zeilen-Block)
         if (
           i + 6 < lines.length &&
           /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
@@ -31,6 +34,7 @@ export default function SwissTennisRanking() {
           i += 7;
           continue;
         }
+        // Interclub-Format (8 Zeilen-Block)
         if (
           i + 7 < lines.length &&
           /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
@@ -45,6 +49,7 @@ export default function SwissTennisRanking() {
           i += 8;
           continue;
         }
+        // Generisch
         if (/^[0-9]+\.[0-9]+$/.test(lines[i].trim())) {
           const wwLine = lines[i].trim();
           const name = (i > 0 ? lines[i - 1].trim() : "Unbekannt");
@@ -86,16 +91,19 @@ export default function SwissTennisRanking() {
     setMatches([]);
   };
 
+  // Berechnung mit Decay nach Spielanzahl + Streichresultaten
   const calculate = () => {
     let wins = matches.filter((m) => m.result === "S");
     let losses = matches
       .map((m, i) => ({ ...m, index: i }))
       .filter((m) => m.result === "N");
 
+    // Nur echte Spiele zählen
     const numGames = wins.length + losses.length;
     const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
+    // Streichresultate
     const numStreich = Math.floor(numGames / 6);
     let gestrichenIdx = [];
     if (numStreich > 0 && losses.length > 0) {
@@ -226,11 +234,22 @@ export default function SwissTennisRanking() {
         <button
           type="button"
           onClick={() => setShowImport(!showImport)}
-          className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+          className="bg-blue-500 text-white px-4 py-2 rounded mb-2"
           style={{ margin: "0 auto", display: "block" }}
         >
           {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
         </button>
+
+        {matches.length > 0 && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="bg-red-600 text-white px-4 py-2 rounded mb-4"
+            style={{ margin: "0 auto", display: "block" }}
+          >
+            Alle Daten löschen
+          </button>
+        )}
       </div>
 
       {showImport && (
@@ -253,16 +272,6 @@ export default function SwissTennisRanking() {
           >
             Importieren & schließen
           </button>
-          {matches.length > 0 && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="bg-red-600 text-white px-4 py-2 rounded mt-2"
-              style={{ margin: "0 auto", display: "block" }}
-            >
-              Alle Daten löschen
-            </button>
-          )}
           {errorMessage && (
             <p className="text-red-600 mt-2">{errorMessage}</p>
           )}
