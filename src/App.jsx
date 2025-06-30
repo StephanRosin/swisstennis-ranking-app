@@ -77,7 +77,7 @@ const calculate = () => {
     // Schlechteste Niederlagen finden (höchster WW)
     const sortedLosses = losses
       .slice()
-      .sort((a, b) => parseFloat(b.ww) - parseFloat(a.ww));
+      .sort((a, b) => parseFloat(a.ww) - parseFloat(b.ww))
     gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
     // Die übrigen Niederlagen werden zur Wertung herangezogen:
     losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
