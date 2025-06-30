@@ -158,42 +158,20 @@ export default function SwissTennisRanking() {
   const result = calculate();
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <div
-        className="header-row"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
-      >
-        <h1 className="text-2xl font-bold mb-4">
-          Swiss Tennis Ranking Rechner
-        </h1>
-        <div
-          className="bg-gray-100 p-4 rounded shadow result-summary-box"
-          style={{
-            minWidth: 220,
-            marginLeft: 24,
-            marginBottom: "1.5rem",
-            textAlign: "left",
-          }}
-        >
-          <p>
-            <strong>Neuer WW:</strong> {result.newWW}
-          </p>
-          <p>
-            <strong>Risikozuschlag:</strong> {result.risk}
-          </p>
-          <p>
-            <strong>Gesamtwert:</strong> {result.total}
-          </p>
-          <p>
-            <strong>Aktuelle Klassierung:</strong> {result.classification}
-          </p>
-        </div>
-      </div>
-
+   <div className="p-4 max-w-4xl mx-auto">
+  <h1 className="text-2xl font-bold mb-4">
+    Swiss Tennis Ranking Rechner
+  </h1>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: "32px",
+      marginBottom: "1.5rem",
+    }}
+  >
+    <div style={{ flex: 1 }}>
       <div className="mb-4">
         <label className="block">Start-Wettkampfwert (W₀):</label>
         <input
@@ -215,6 +193,28 @@ export default function SwissTennisRanking() {
           className="border p-2 w-32"
         />
       </div>
+    </div>
+    <div
+      className="bg-gray-100 p-4 rounded shadow result-summary-box"
+      style={{
+        minWidth: 220,
+        textAlign: "left",
+      }}
+    >
+      <p>
+        <strong>Neuer WW:</strong> {result.newWW}
+      </p>
+      <p>
+        <strong>Risikozuschlag:</strong> {result.risk}
+      </p>
+      <p>
+        <strong>Gesamtwert:</strong> {result.total}
+      </p>
+      <p>
+        <strong>Aktuelle Klassierung:</strong> {result.classification}
+      </p>
+    </div>
+  </div>
 
       <button
         onClick={() => setShowImport(!showImport)}
