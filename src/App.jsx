@@ -12,7 +12,7 @@ export default function SwissTennisRanking() {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
- const parseInput = () => {
+const parseInput = () => {
   try {
     const text = inputText;
     const lines = text
@@ -20,7 +20,7 @@ export default function SwissTennisRanking() {
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
 
-    // Extrahiere Wettkampfwert (z.B. "Wettkampfwert" gefolgt von Zahl)
+    // Wettkampfwert extrahieren (wie gehabt)
     const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
     if (
       wwi !== -1 &&
@@ -34,79 +34,86 @@ export default function SwissTennisRanking() {
     const parsed = [];
     let i = 0;
     while (i < lines.length) {
-      // Interclub: 8 Zeilen
+      // Block-Matchmuster: [Datum], [optional Turnier], Name, WW, [optional Info], Ergebnis, Code
+      // Wir suchen Blöcke, die wie folgt aufgebaut sind:
+      // Zeile: Datum,  Name (oder Turnier), WW (Nummer), Klassierung oder egal, Ergebnis (z.B. 6:4 7:6), Code (S/N/W/Z)
+      if (
+        i + 5 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 2].replace(",", ".")) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 5])
+      ) {
+        const code = lines[i + 5];
+        if (code === "S" || code === "N") {
+          parsed.push({
+            name: lines[i + 1],
+            ww: lines[i + 2].replace(",", "."),
+            result: code,
+          });
+        }
+        i += 6;
+        continue;
+      }
+
+      // Alternativer Block: Datum, Turnier, Name, WW, Klassierung, Ergebnis, Code
+      if (
+        i + 6 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 5]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 6])
+      ) {
+        const code = lines[i + 6];
+        if (code === "S" || code === "N") {
+          parsed.push({
+            name: lines[i + 2],
+            ww: lines[i + 3].replace(",", "."),
+            result: code,
+          });
+        }
+        i += 7;
+        continue;
+      }
+
+      // Für Interclub/Turnier wie gehabt
       if (
         i + 7 < lines.length &&
         /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) && // Datum
-        /^[\d\.]+$/.test(lines[i + 4]) && // WW Wert
-        ["S", "N", "W", "Z"].includes(lines[i + 7]) // Code
+        /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 7])
       ) {
         const code = lines[i + 7];
         if (code === "S" || code === "N") {
           parsed.push({
             name: lines[i + 3],
-            ww: lines[i + 4],
+            ww: lines[i + 4].replace(",", "."),
             result: code,
           });
         }
         i += 8;
         continue;
       }
-      // Turnier: 7 Zeilen
+
+      // Für Turnier (7 Zeilen)
       if (
         i + 6 < lines.length &&
-        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) && // Datum
-        /^[\d\.]+$/.test(lines[i + 3]) && // WW Wert
-        ["S", "N", "W", "Z"].includes(lines[i + 6]) // Code
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 6])
       ) {
         const code = lines[i + 6];
         if (code === "S" || code === "N") {
           parsed.push({
             name: lines[i + 2],
-            ww: lines[i + 3],
+            ww: lines[i + 3].replace(",", "."),
             result: code,
           });
         }
         i += 7;
         continue;
       }
-      // Auslandresultate lizenzierte Gegner: 7 Zeilen (wie Turnier)
-      if (
-        i + 6 < lines.length &&
-        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) && // Datum
-        /^[\d\.]+$/.test(lines[i + 3]) && // WW Wert
-        ["S", "N", "W", "Z"].includes(lines[i + 6]) // Code
-      ) {
-        const code = lines[i + 6];
-        if (code === "S" || code === "N") {
-          parsed.push({
-            name: lines[i + 2],
-            ww: lines[i + 3],
-            result: code,
-          });
-        }
-        i += 7;
-        continue;
-      }
-      // Auslandresultate nicht lizenzierte Gegner: 8 Zeilen (ähnlich Interclub)
-      if (
-        i + 7 < lines.length &&
-        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) && // Datum
-        /^[\d\.]+$/.test(lines[i + 3]) && // WW Wert
-        ["S", "N", "W", "Z"].includes(lines[i + 6]) // Code
-      ) {
-        const code = lines[i + 6];
-        // Aber beachte: bei diesen Blöcken ist Zeile +3 der WW und +6 das Resultat
-        if (code === "S" || code === "N") {
-          parsed.push({
-            name: lines[i + 2],
-            ww: lines[i + 3],
-            result: code,
-          });
-        }
-        i += 7;
-        continue;
-      }
+
       i++;
     }
 
