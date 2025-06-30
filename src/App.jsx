@@ -46,14 +46,15 @@ export default function SwissTennisRanking() {
 
       // Spielerinfos extrahieren
       const info = {};
-	  lines.forEach((line, i) => {
+	lines.forEach((line, i) => {
 	  infoLabels.forEach(label => {
 		if (line.startsWith(label)) {
 		  let val = line.replace(label, "").replace(/^[:\s]*/, "");
 		  if (!val && lines[i + 1]) val = lines[i + 1].trim();
-		  // Speziell für Klassierung: nur akzeptieren, wenn wie eine Klassierung aussehend
+		  // Nur für Klassierung:
 		  if (label === "Klassierung") {
-			const match = val.match(/^(R\d|N\d)(\s*\(\d+\))?/);
+			// Neue RegEx:
+			const match = val.match(/^(R\d|N\d)\s*\(\d+\)$/);
 			if (match) {
 			  info[label] = match[0].trim();
 			} else {
@@ -65,6 +66,7 @@ export default function SwissTennisRanking() {
 		}
 	  });
 	});
+
 
       if (Object.keys(info).length > 0) setPlayerInfo(info);
 
