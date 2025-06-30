@@ -334,7 +334,7 @@ export default function SwissTennisRanking() {
         <div
           className="player-info-table"
           style={{
-            width: "700px",
+            width: "1700px",
             margin: "0 auto 1.3em auto",
             background: "#fff",
             borderRadius: 16,
