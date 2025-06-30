@@ -9,10 +9,11 @@ export default function SwissTennisRanking() {
   const [errorMessage, setErrorMessage] = useState("");
 
   // Decay-Berechnung nach Spielanzahl
-  function estimateDecay(numSpiele) {
-    // Linear zwischen 0.82 (0 Spiele) und 0.98 (ab 12+ Spiele)
-    return Math.min(1, 0.82 + 0.015 * Math.min(numSpiele, 12));
-  }
+function estimateDecay(numSpiele) {
+  // Linear zwischen 0.82 (0 Spiele) und 1.00 (24+ Spiele)
+  return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
+}
+
 
   // Parser wie vorher (Turnier + Interclub)
   const parseInput = () => {
