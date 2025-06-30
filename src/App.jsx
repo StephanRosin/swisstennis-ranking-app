@@ -181,22 +181,6 @@ export default function SwissTennisRanking() {
           continue;
         }
 
-        // --- Einzelner Walkover (auch wenn kein Score vorhanden) ---
-        if (
-          (lines[i] === "W" || lines[i] === "Z") &&
-          (!parsed.length || (parsed[parsed.length - 1] && parsed[parsed.length - 1].result !== lines[i]))
-        ) {
-          parsed.push({
-            name: "",
-            ww: "",
-            result: lines[i],
-            score: "",
-            isWalkover: true,
-          });
-          i += 1;
-          continue;
-        }
-
         i++;
       }
 
@@ -278,7 +262,7 @@ export default function SwissTennisRanking() {
     const total = W + R;
 
     let classification = "Unbekannt";
-    if (total >= 10.566) classification = "N4";
+    if (total >= 10.565) classification = "N4";
     else if (total >= 9.317) classification = "R1";
     else if (total >= 8.091) classification = "R2";
     else if (total >= 6.894) classification = "R3";
@@ -324,25 +308,6 @@ export default function SwissTennisRanking() {
       )}
 
       <div style={{ textAlign: "center" }}>
-        <div className="btn-row" style={{ marginBottom: 18 }}>
-          <button
-            type="button"
-            onClick={() => setShowImport(!showImport)}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
-          </button>
-          {matches.length > 0 && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="bg-red-600 text-white px-4 py-2 rounded"
-              style={{ marginLeft: 14 }}
-            >
-              Alle Daten löschen
-            </button>
-          )}
-        </div>
         <div className="mb-4">
           <label className="block">Start-Wettkampfwert (W₀):</label>
           <input
@@ -354,7 +319,6 @@ export default function SwissTennisRanking() {
             style={{ margin: "0 auto", display: "block" }}
           />
         </div>
-
         <div className="mb-4">
           <label className="block">
             Decay-Faktor (automatisch):
@@ -372,7 +336,6 @@ export default function SwissTennisRanking() {
             ({result.numGames} Spiele)
           </div>
         </div>
-
         <div
           className="bg-gray-100 p-4 rounded shadow result-summary-box"
           style={{
@@ -401,34 +364,25 @@ export default function SwissTennisRanking() {
         </div>
       </div>
 
-      {showImport && (
-        <div className="mb-4" style={{ textAlign: "center" }}>
-          <label className="block">
-            Importiere Text aus MyTennis (alle Formate unterstützt):
-          </label>
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            rows={12}
-            className="border p-2 w-full"
-            style={{ maxWidth: 550, margin: "0 auto", display: "block" }}
-          ></textarea>
-          <button
-            type="button"
-            onClick={parseInput}
-            className="bg-green-500 text-white px-4 py-2 rounded mt-2"
-            style={{ margin: "0 auto", display: "block" }}
-          >
-            Importieren & schließen
-          </button>
-          {errorMessage && (
-            <p className="text-red-600 mt-2">{errorMessage}</p>
-          )}
-        </div>
-      )}
-
       {matches.length > 0 && (
-        <div className="mb-4">
+        <div>
+          <div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>
+            <button
+              type="button"
+              onClick={() => setShowImport(!showImport)}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
+            </button>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="bg-red-600 text-white px-4 py-2 rounded"
+              style={{ marginLeft: 14 }}
+            >
+              Alle Daten löschen
+            </button>
+          </div>
           <h2 className="text-lg font-semibold mb-2" style={{ textAlign: "center" }}>
             Importierte Matches:
           </h2>
@@ -499,6 +453,32 @@ export default function SwissTennisRanking() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {showImport && (
+        <div className="mb-4" style={{ textAlign: "center" }}>
+          <label className="block">
+            Importiere Text aus MyTennis (alle Formate unterstützt):
+          </label>
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            rows={12}
+            className="border p-2 w-full"
+            style={{ maxWidth: 550, margin: "0 auto", display: "block" }}
+          ></textarea>
+          <button
+            type="button"
+            onClick={parseInput}
+            className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            style={{ margin: "0 auto", display: "block" }}
+          >
+            Importieren & schließen
+          </button>
+          {errorMessage && (
+            <p className="text-red-600 mt-2">{errorMessage}</p>
+          )}
         </div>
       )}
 
