@@ -429,10 +429,7 @@ export default function SwissTennisRanking() {
           <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
           <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
         </div>
-        <div style={{ fontSize: "0.98em", color: "#888", marginTop: 8 }}>
-          (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
-        </div>
-      </div>
+       </div>
 
       {/* BUTTONS */}
       <div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>
