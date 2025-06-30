@@ -166,23 +166,33 @@ export default function SwissTennisRanking() {
                 <th className="border px-2">Aktion</th>
               </tr>
             </thead>
-            <tbody>
-              {matches.map((m, i) => (
-                <tr key={i}>
-                  <td className="border px-2 text-center">{m.name}</td>
-                  <td className="border px-2 text-center">{m.ww}</td>
-                  <td className="border px-2 text-center">{m.result}</td>
-                  <td className="border px-2 text-center">
-                    <button
-                      onClick={() => removeMatch(i)}
-                      className="bg-red-500 text-white px-2 py-1 rounded"
-                    >
-                      Löschen
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+           <tbody>
+			  {matches.map((m, i) => (
+				<tr key={i}>
+				  <td className="border px-2 text-center">{m.name}</td>
+				  <td className="border px-2 text-center">{m.ww}</td>
+				  <td className="border px-2 text-center">
+					<span
+					  className={
+						"result-circle " +
+						(m.result === "S" ? "result-s" : m.result === "N" ? "result-n" : "")
+					  }
+					>
+					  {m.result}
+					</span>
+				  </td>
+				  <td className="border px-2 text-center">
+					<button
+					  onClick={() => removeMatch(i)}
+					  className="delete-x-btn"
+					  title="Löschen"
+					>
+					  ×
+					</button>
+				  </td>
+				</tr>
+			  ))}
+			</tbody>
           </table>
         </div>
       )}

@@ -123,3 +123,38 @@ tr:nth-child(even) td {
 .font-bold { font-weight: 700; }
 .max-w-4xl { max-width: 52rem; }
 .mx-auto { margin-left: auto; margin-right: auto; }
+/* Kreise für Ergebnis */
+.result-circle {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  line-height: 2rem;
+  border-radius: 50%;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.result-s {
+  background: #2563eb;
+}
+
+.result-n {
+  background: #dc2626;
+}
+
+/* X-Button */
+.delete-x-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0.1rem 0.5rem;
+  transition: color 0.2s;
+}
+.delete-x-btn:hover {
+  color: #a11515;
+}
