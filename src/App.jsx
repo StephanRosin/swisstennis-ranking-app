@@ -416,6 +416,7 @@ export default function SwissTennisRanking() {
       >
 		<div>
 		<span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Neue Berechnung:</span>{" "}
+		 </div>
 		 <div>
           <span style={{ color: "#123370", fontWeight: 700 }}>Wettkampfwert:</span>{" "}
           <span style={{ color: "#555" }}>{result.newWW}</span>
