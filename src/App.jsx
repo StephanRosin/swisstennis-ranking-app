@@ -8,76 +8,75 @@ export default function SwissTennisRanking() {
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Parsing: unterstützt beide Formate
-const parseInput = () => {
-  try {
-    const lines = inputText.trim().split(/\n+/);
-    const parsed = [];
-    let i = 0;
-    while (i < lines.length) {
-      // Turnier-Format (7 Zeilen-Block)
-      if (
-        i + 6 < lines.length &&
-        /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) && // Datum
-        /^[0-9]+\.[0-9]+$/.test(lines[i + 3].trim()) && // WW Gegner
-        ["S", "N", "W"].includes(lines[i + 6].trim())
-      ) {
-        parsed.push({
-          name: lines[i + 2].trim(),
-          ww: lines[i + 3].trim(),
-          result: lines[i + 6].trim() === "W" ? "S" : lines[i + 6].trim(),
-        });
-        i += 7;
-        continue;
-      }
-      // Interclub-Format (8 Zeilen-Block)
-      if (
-        i + 7 < lines.length &&
-        /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) && // Datum
-        /^[0-9]+\.[0-9]+$/.test(lines[i + 4].trim()) && // WW Gegner
-        ["S", "N", "W"].includes(lines[i + 7].trim())
-      ) {
-        parsed.push({
-          name: lines[i + 3].trim(),
-          ww: lines[i + 4].trim(),
-          result: lines[i + 7].trim() === "W" ? "S" : lines[i + 7].trim(),
-        });
-        i += 8;
-        continue;
-      }
-      // Generisch: Immer wenn WW gefunden wird, nimm Name davor
-      if (/^[0-9]+\.[0-9]+$/.test(lines[i].trim())) {
-        const wwLine = lines[i].trim();
-        const name = (i > 0 ? lines[i - 1].trim() : "Unbekannt");
-        let resultLine = null;
-        for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
-          if (["S", "N", "W"].includes(lines[j].trim())) {
-            resultLine = lines[j].trim() === "W" ? "S" : lines[j].trim();
-            i = j;
-            break;
+  // Parser unterstützt Turnier- und Interclub-Formate und speichert Walkover ("W") als solchen ab
+  const parseInput = () => {
+    try {
+      const lines = inputText.trim().split(/\n+/);
+      const parsed = [];
+      let i = 0;
+      while (i < lines.length) {
+        // Turnier-Format (7 Zeilen-Block)
+        if (
+          i + 6 < lines.length &&
+          /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
+          /^[0-9]+\.[0-9]+$/.test(lines[i + 3].trim()) &&
+          ["S", "N", "W"].includes(lines[i + 6].trim())
+        ) {
+          parsed.push({
+            name: lines[i + 2].trim(),
+            ww: lines[i + 3].trim(),
+            result: lines[i + 6].trim(), // NICHT als "S" umwandeln!
+          });
+          i += 7;
+          continue;
+        }
+        // Interclub-Format (8 Zeilen-Block)
+        if (
+          i + 7 < lines.length &&
+          /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
+          /^[0-9]+\.[0-9]+$/.test(lines[i + 4].trim()) &&
+          ["S", "N", "W"].includes(lines[i + 7].trim())
+        ) {
+          parsed.push({
+            name: lines[i + 3].trim(),
+            ww: lines[i + 4].trim(),
+            result: lines[i + 7].trim(),
+          });
+          i += 8;
+          continue;
+        }
+        // Generisch
+        if (/^[0-9]+\.[0-9]+$/.test(lines[i].trim())) {
+          const wwLine = lines[i].trim();
+          const name = (i > 0 ? lines[i - 1].trim() : "Unbekannt");
+          let resultLine = null;
+          for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
+            if (["S", "N", "W"].includes(lines[j].trim())) {
+              resultLine = lines[j].trim();
+              i = j;
+              break;
+            }
+          }
+          if (wwLine && resultLine) {
+            parsed.push({ name, ww: wwLine, result: resultLine });
           }
         }
-        if (wwLine && resultLine) {
-          parsed.push({ name, ww: wwLine, result: resultLine });
-        }
+        i++;
       }
-      i++;
+      if (parsed.length === 0) {
+        setErrorMessage(
+          "Keine gültigen WW/Resultat-Paare gefunden. Bitte überprüfe das Format."
+        );
+        return;
+      }
+      setMatches((prev) => [...prev, ...parsed]);
+      setInputText("");
+      setShowImport(false);
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage("Fehler beim Parsen: " + error.message);
     }
-    if (parsed.length === 0) {
-      setErrorMessage(
-        "Keine gültigen WW/Resultat-Paare gefunden. Bitte überprüfe das Format."
-      );
-      return;
-    }
-    setMatches((prev) => [...prev, ...parsed]);
-    setInputText("");
-    setShowImport(false);
-    setErrorMessage("");
-  } catch (error) {
-    setErrorMessage("Fehler beim Parsen: " + error.message);
-  }
-};
-
+  };
 
   const removeMatch = (index) => {
     const updated = matches.filter((_, i) => i !== index);
@@ -88,14 +87,17 @@ const parseInput = () => {
     setMatches([]);
   };
 
-  // SwissTennis-Berechnung mit Streichresultaten
+  // Berechnung mit Streichresultaten, Walkover werden ignoriert
   const calculate = () => {
+    // Nur echte Siege und Niederlagen werden berechnet!
     let wins = matches.filter((m) => m.result === "S");
     let losses = matches
       .map((m, i) => ({ ...m, index: i }))
       .filter((m) => m.result === "N");
 
-    const totalGames = matches.length;
+    const totalGames = matches.filter(
+      (m) => m.result === "S" || m.result === "N"
+    ).length;
     const numStreich = Math.floor(totalGames / 6);
 
     // Indizes der gestrichenen Niederlagen
@@ -106,7 +108,6 @@ const parseInput = () => {
         .slice()
         .sort((a, b) => parseFloat(a.ww) - parseFloat(b.ww));
       gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
-      // Die übrigen Niederlagen werden zur Wertung herangezogen:
       losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
     }
 
@@ -131,6 +132,7 @@ const parseInput = () => {
 
     const total = newWW + risk;
 
+    // Vollständige Klassierungsstufen
     let classification = "Unbekannt";
     if (total >= 10.566) classification = "N4";
     else if (total >= 9.317) classification = "R1";
@@ -157,7 +159,6 @@ const parseInput = () => {
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      {/* Header + Ergebniskasten */}
       <div
         className="header-row"
         style={{
@@ -289,6 +290,8 @@ const parseInput = () => {
                           ? "result-s"
                           : m.result === "N"
                           ? "result-n"
+                          : m.result === "W"
+                          ? "result-w"
                           : "")
                       }
                     >

@@ -135,16 +135,9 @@ tr:nth-child(even) td {
   text-align: center;
   font-size: 1.15rem;
 }
-
-.result-s {
-  background: #2563eb;
-}
-
-.result-n {
-  background: #dc2626;
-}
-
-/* X-Button */
+.result-s { background: #2563eb; }
+.result-n { background: #dc2626; }
+.result-w { background: #9ca3af; }
 .delete-x-btn {
   background: none;
   border: none;
@@ -155,13 +148,12 @@ tr:nth-child(even) td {
   padding: 0.1rem 0.5rem;
   transition: color 0.2s;
 }
-.delete-x-btn:hover {
-  color: #a11515;
-}
+.delete-x-btn:hover { color: #a11515; }
 .stricken-row {
   text-decoration: line-through;
   opacity: 0.6;
 }
+
 @media (max-width: 700px) {
   .result-summary-box {
     min-width: unset !important;
