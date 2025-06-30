@@ -13,74 +13,78 @@ export default function SwissTennisRanking() {
   }
 
   // Parser für beide Formate + Walkover
-  const parseInput = () => {
-    try {
-      const lines = inputText.trim().split(/\n+/);
-      const parsed = [];
-      let i = 0;
-      while (i < lines.length) {
-        // Turnier-Format (7 Zeilen-Block)
-        if (
-          i + 6 < lines.length &&
-          /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
-          /^[0-9]+\.[0-9]+$/.test(lines[i + 3].trim()) &&
-          ["S", "N", "W"].includes(lines[i + 6].trim())
-        ) {
-          parsed.push({
-            name: lines[i + 2].trim(),
-            ww: lines[i + 3].trim(),
-            result: lines[i + 6].trim(),
-          });
-          i += 7;
-          continue;
-        }
-        // Interclub-Format (8 Zeilen-Block)
-        if (
-          i + 7 < lines.length &&
-          /^[0-9]{2}\.[0-9]{2}\.20[0-9]{2}$/.test(lines[i].trim()) &&
-          /^[0-9]+\.[0-9]+$/.test(lines[i + 4].trim()) &&
-          ["S", "N", "W"].includes(lines[i + 7].trim())
-        ) {
-          parsed.push({
-            name: lines[i + 3].trim(),
-            ww: lines[i + 4].trim(),
-            result: lines[i + 7].trim(),
-          });
-          i += 8;
-          continue;
-        }
-        // Generisch
-        if (/^[0-9]+\.[0-9]+$/.test(lines[i].trim())) {
-          const wwLine = lines[i].trim();
-          const name = (i > 0 ? lines[i - 1].trim() : "Unbekannt");
-          let resultLine = null;
-          for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
-            if (["S", "N", "W"].includes(lines[j].trim())) {
-              resultLine = lines[j].trim();
-              i = j;
-              break;
-            }
-          }
-          if (wwLine && resultLine) {
-            parsed.push({ name, ww: wwLine, result: resultLine });
-          }
-        }
-        i++;
-      }
-      if (parsed.length === 0) {
-        setErrorMessage(
-          "Keine gültigen WW/Resultat-Paare gefunden. Bitte überprüfe das Format."
-        );
-        return;
-      }
-      setMatches((prev) => [...prev, ...parsed]);
-      setInputText("");
-      setShowImport(false);
-      setErrorMessage("");
-    } catch (error) {
-      setErrorMessage("Fehler beim Parsen: " + error.message);
+const parseInput = () => {
+  try {
+    const text = inputText;
+    // Zeilen vereinheitlichen
+    const lines = text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    // Extrahiere Wettkampfwert (z.B. "Wettkampfwert" gefolgt von Zahl)
+    const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
+    if (wwi !== -1 && wwi + 1 < lines.length && /^[\d\.,]+$/.test(lines[wwi + 1])) {
+      let wwExtracted = lines[wwi + 1].replace(",", ".");
+      setStartWW(parseFloat(wwExtracted));
     }
-  };
+
+    const parsed = [];
+    let i = 0;
+    while (i < lines.length) {
+      // Interclub-Block: 8 Zeilen
+      if (
+        i + 7 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) && // Datum
+        /^[\d\.]+$/.test(lines[i + 4]) && // WW Wert
+        ["S", "N", "W", "Z"].includes(lines[i + 7]) // Code
+      ) {
+        const code = lines[i + 7];
+        if (code === "S" || code === "N") {
+          parsed.push({
+            name: lines[i + 3],
+            ww: lines[i + 4],
+            result: code,
+          });
+        }
+        i += 8;
+        continue;
+      }
+      // Turnier-Block: 7 Zeilen
+      if (
+        i + 6 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) && // Datum
+        /^[\d\.]+$/.test(lines[i + 3]) && // WW Wert
+        ["S", "N", "W", "Z"].includes(lines[i + 6]) // Code
+      ) {
+        const code = lines[i + 6];
+        if (code === "S" || code === "N") {
+          parsed.push({
+            name: lines[i + 2],
+            ww: lines[i + 3],
+            result: code,
+          });
+        }
+        i += 7;
+        continue;
+      }
+      i++;
+    }
+
+    if (parsed.length === 0) {
+      setErrorMessage(
+        "Keine gültigen Resultate gefunden. Bitte stelle sicher, dass du das komplette Textfeld von MyTennis kopierst."
+      );
+      return;
+    }
+    setMatches((prev) => [...prev, ...parsed]);
+    setInputText("");
+    setShowImport(false);
+    setErrorMessage("");
+  } catch (error) {
+    setErrorMessage("Fehler beim Parsen: " + error.message);
+  }
+};
 
   const removeMatch = (index) => {
     const updated = matches.filter((_, i) => i !== index);
