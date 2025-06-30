@@ -197,7 +197,7 @@ function estimateDecay(numSpiele) {
 
 		  <div className="mb-4">
 			<label className="block">
-			  Decay-Faktor (automatisch):
+			  Decay-Faktor (geschätzt):
 			</label>
 			<input
 			  type="number"
@@ -209,6 +209,10 @@ function estimateDecay(numSpiele) {
 			/>
 			<div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
 			  ({result.numGames} Spiele)
+			</div>
+			<div style={{ fontSize: "0.9em", color: "#888" }}>
+			  Decay steigt linear von 0.82 (0 Spiele) bis 1.00 (24+ Spiele).
+			  Beispiel: 12 Spiele = 0.91, 18 Spiele = 0.96, 24+ Spiele = 1.00
 			</div>
 		  </div>
 		</div>
