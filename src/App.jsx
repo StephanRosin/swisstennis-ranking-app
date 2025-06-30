@@ -46,26 +46,29 @@ export default function SwissTennisRanking() {
 
       // Spielerinfos extrahieren
       const info = {};
-	lines.forEach((line, i) => {
-	  infoLabels.forEach(label => {
-		if (line.startsWith(label)) {
-		  let val = line.replace(label, "").replace(/^[:\s]*/, "");
-		  if (!val && lines[i + 1]) val = lines[i + 1].trim();
-		  // Nur für Klassierung:
-		  if (label === "Klassierung") {
-			// Neue RegEx:
-			const match = val.match(/^(R\d|N\d)\s*\(\d+\)$/);
-			if (match) {
-			  info[label] = match[0].trim();
-			} else {
-			  info[label] = "";
+		lines.forEach((line, i) => {
+		  infoLabels.forEach(label => {
+			if (line.startsWith(label)) {
+			  let val = line.replace(label, "").replace(/^[:\s]*/, "");
+			  // Bei Klassierung: Wert kann in der nächsten Zeile stehen
+			  if (label === "Klassierung") {
+				// Wenn der Wert leer ist, prüfe die nächste Zeile auf Muster
+				if (!val && lines[i + 1]) {
+				  // Muster: R5 (4752) oder N4 (1234) oder R5
+				  const klassierungVal = lines[i + 1].trim();
+				  if (/^(R\d|N\d)(\s*\(\d+\))?$/.test(klassierungVal)) {
+					info[label] = klassierungVal;
+				  }
+				} else if (/^(R\d|N\d)(\s*\(\d+\))?$/.test(val)) {
+				  info[label] = val;
+				}
+			  } else {
+				info[label] = val;
+			  }
 			}
-		  } else {
-			info[label] = val;
-		  }
-		}
-	  });
-	});
+		  });
+		});
+
 
 
       if (Object.keys(info).length > 0) setPlayerInfo(info);
