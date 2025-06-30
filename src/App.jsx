@@ -13,127 +13,191 @@ export default function SwissTennisRanking() {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
-const parseInput = () => {
-  try {
-    const text = inputText;
-    const lines = text
-      .replace(/ /g, "\n") // Ersetze seltsame Umbruchzeichen
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+  // Universeller MyTennis-Parser für alle Blocktypen inkl. "Label: Wert"-Layout
+  const parseInput = () => {
+    try {
+      const text = inputText;
+      // Ersetze Sonderzeichen für Umbrüche/Leerzeichen etc.
+      const lines = text
+        .replace(/ /g, "\n")
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
 
-    // Spielernamen extrahieren
-    for (let j = 0; j < lines.length - 1; j++) {
-      if (/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.0\)$/.test(lines[j + 1])) {
-        setPlayerName(`${lines[j]} ${lines[j + 1]}`);
-        break;
+      // Spielernamen extrahieren (Name gefolgt von Lizenznummer in Klammern)
+      for (let j = 0; j < lines.length - 1; j++) {
+        if (/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.0\)$/.test(lines[j + 1])) {
+          setPlayerName(`${lines[j]} ${lines[j + 1]}`);
+          break;
+        }
       }
-    }
 
-    // Wettkampfwert extrahieren
-    const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
-    if (
-      wwi !== -1 &&
-      wwi + 1 < lines.length &&
-      /^[\d\.,]+$/.test(lines[wwi + 1])
-    ) {
-      let wwExtracted = lines[wwi + 1].replace(",", ".");
-      setStartWW(parseFloat(wwExtracted));
-    }
-
-    const parsed = [];
-    let i = 0;
-    while (i < lines.length) {
-      // NEU: Label-Block (z.B. von deinem Beispiel)
+      // Wettkampfwert extrahieren (z.B. "Wettkampfwert" gefolgt von Zahl)
+      const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
       if (
-        (lines[i] === "DATUM" || lines[i] === "Datum") &&
-        i + 1 < lines.length &&
-        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i + 1])
+        wwi !== -1 &&
+        wwi + 1 < lines.length &&
+        /^[\d\.,]+$/.test(lines[wwi + 1])
       ) {
-        let block = {};
-        let j = i;
-        // Gehe bis nächster "DATUM" oder bis max. 12 Zeilen
-        while (
-          j < lines.length &&
-          !["DATUM", "Datum"].includes(lines[j]) ||
-          j === i
-        ) {
-          const label = lines[j];
-          const value = lines[j + 1];
-          if (
-            (label === "NAME DES GEGNERS" || label === "Name des Gegners") &&
-            value
-          ) {
-            block.name = value;
-          }
-          if (
-            /^R\d\s*\(.+\)$/.test(value) &&
-            value
-          ) {
-            // WW steht in Zeile davor oder danach, je nach Export
-            // Ignoriere, hole den Wert später beim passenden Label
-          }
-          if (
-            (label === "CODE" || label === "Code") &&
-            value
-          ) {
-            block.result = value;
-          }
-          if (
-            (label === "RESULTAT" || label === "Resultate" || label === "Resultat") &&
-            value
-          ) {
-            block.score = value;
-          }
-          if (
-            (label === "Wettk. Wert 4.L." ||
-              label === "Wettkampfwert 4.L." ||
-              label === "Wettkampfwert" ||
-              label === "WW Gegner" ||
-              label === "WW") &&
-            value &&
-            /^[\d\.,]+$/.test(value.replace(",", "."))
-          ) {
-            block.ww = value.replace(",", ".");
-          }
-          // Turniername, Runde, Liga etc. werden ignoriert
-          j += 2;
-        }
-        if (block.name && block.ww && block.result && (block.result === "S" || block.result === "N")) {
-          parsed.push({
-            name: block.name,
-            ww: block.ww,
-            result: block.result,
-          });
-        }
-        // Gehe zum nächsten DATUM
-        i = j;
-        continue;
+        let wwExtracted = lines[wwi + 1].replace(",", ".");
+        setStartWW(parseFloat(wwExtracted));
       }
 
-      // Universeller Block wie bisher
-      // ... (hier wie im vorherigen Parser die weiteren Formate abdecken!)
-      // Beispiel: 6er, 7er, 8er Blöcke von weiter oben...
+      const parsed = [];
+      let i = 0;
+      while (i < lines.length) {
+        // NEU: Label/Value-Block, z.B. "DATUM\n24.05.2025\nNAME DES GEGNERS\n..."
+        if (
+          (lines[i].toUpperCase() === "DATUM") &&
+          i + 1 < lines.length &&
+          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i + 1])
+        ) {
+          let block = {};
+          let j = i;
+          let step = 0;
+          while (
+            j < lines.length &&
+            !["DATUM", "Datum"].includes(lines[j]) || j === i
+          ) {
+            const label = lines[j].toUpperCase();
+            const value = lines[j + 1];
+            if (
+              label === "NAME DES GEGNERS" &&
+              value
+            ) {
+              block.name = value;
+            }
+            if (
+              (label === "WETTK. WERT 4.L." ||
+                label === "WETTKAMPFWERT 4.L." ||
+                label === "WETTKAMPFWERT" ||
+                label === "WW GEGNER" ||
+                label === "WW") &&
+              value &&
+              /^[\d\.,]+$/.test(value.replace(",", "."))
+            ) {
+              block.ww = value.replace(",", ".");
+            }
+            if (
+              (label === "CODE") &&
+              value
+            ) {
+              block.result = value;
+            }
+            if (
+              (label === "RESULTAT" || label === "RESULTATE") &&
+              value
+            ) {
+              block.score = value;
+            }
+            j += 2;
+            step++;
+            if (step > 12) break; // Schutz vor endloser Schleife bei kaputten Daten
+          }
+          if (block.name && block.ww && block.result && (block.result === "S" || block.result === "N")) {
+            parsed.push({
+              name: block.name,
+              ww: block.ww,
+              result: block.result,
+            });
+          }
+          i = j;
+          continue;
+        }
 
-      // (hier restliche Formate von vorherem Parser beibehalten!)
+        // Universelle Blöcke für alle bisherigen Formate:
 
-      i++;
+        // 6er Block (Auslandresultat etc.)
+        if (
+          i + 5 < lines.length &&
+          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+          /^[\d\.,]+$/.test(lines[i + 2].replace(",", ".")) &&
+          /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
+          ["S", "N", "W", "Z"].includes(lines[i + 5])
+        ) {
+          const code = lines[i + 5];
+          if (code === "S" || code === "N") {
+            parsed.push({
+              name: lines[i + 1],
+              ww: lines[i + 2].replace(",", "."),
+              result: code,
+            });
+          }
+          i += 6;
+          continue;
+        }
+        // 7er Block
+        if (
+          i + 6 < lines.length &&
+          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+          /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
+          /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 5]) &&
+          ["S", "N", "W", "Z"].includes(lines[i + 6])
+        ) {
+          const code = lines[i + 6];
+          if (code === "S" || code === "N") {
+            parsed.push({
+              name: lines[i + 2],
+              ww: lines[i + 3].replace(",", "."),
+              result: code,
+            });
+          }
+          i += 7;
+          continue;
+        }
+        // 8er Block
+        if (
+          i + 7 < lines.length &&
+          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+          /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
+          ["S", "N", "W", "Z"].includes(lines[i + 7])
+        ) {
+          const code = lines[i + 7];
+          if (code === "S" || code === "N") {
+            parsed.push({
+              name: lines[i + 3],
+              ww: lines[i + 4].replace(",", "."),
+              result: code,
+            });
+          }
+          i += 8;
+          continue;
+        }
+        // Noch ein 7er Block (Alternative Turnier etc.)
+        if (
+          i + 6 < lines.length &&
+          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+          /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
+          ["S", "N", "W", "Z"].includes(lines[i + 6])
+        ) {
+          const code = lines[i + 6];
+          if (code === "S" || code === "N") {
+            parsed.push({
+              name: lines[i + 2],
+              ww: lines[i + 3].replace(",", "."),
+              result: code,
+            });
+          }
+          i += 7;
+          continue;
+        }
+        i++;
+      }
+
+      if (parsed.length === 0) {
+        setErrorMessage(
+          "Keine gültigen Resultate gefunden. Bitte stelle sicher, dass du das komplette Textfeld von MyTennis kopierst."
+        );
+        return;
+      }
+      setMatches((prev) => [...prev, ...parsed]);
+      setInputText("");
+      setShowImport(false);
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage("Fehler beim Parsen: " + error.message);
     }
-
-    if (parsed.length === 0) {
-      setErrorMessage(
-        "Keine gültigen Resultate gefunden. Bitte stelle sicher, dass du das komplette Textfeld von MyTennis kopierst."
-      );
-      return;
-    }
-    setMatches((prev) => [...prev, ...parsed]);
-    setInputText("");
-    setShowImport(false);
-    setErrorMessage("");
-  } catch (error) {
-    setErrorMessage("Fehler beim Parsen: " + error.message);
-  }
-};
+  };
 
   const removeMatch = (index) => {
     const updated = matches.filter((_, i) => i !== index);
@@ -239,7 +303,6 @@ const parseInput = () => {
             type="number"
             step="0.001"
             value={startWW}
-			readOnly
             onChange={(e) => setStartWW(parseFloat(e.target.value))}
             className="border p-2 w-32"
             style={{ margin: "0 auto", display: "block" }}
