@@ -13,7 +13,7 @@ export default function SwissTennisRanking() {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
-  // Universeller MyTennis-Parser für alle Blocktypen inkl. "Label: Wert"-Layout
+  // Universeller MyTennis-Parser für alle Blocktypen inkl. "Label: Wert"-Layout und Walkover
   const parseInput = () => {
     try {
       // Unicode-Bereinigung: Ersetze unsichtbare Sonderzeichen durch \n
@@ -45,7 +45,7 @@ export default function SwissTennisRanking() {
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
-        // NEU: Label/Value-Block, z.B. "DATUM\n24.05.2025\nNAME DES GEGNERS\n..."
+        // --- Label/Value-Block ---
         if (
           (lines[i].toUpperCase() === "DATUM") &&
           i + 1 < lines.length &&
@@ -91,21 +91,25 @@ export default function SwissTennisRanking() {
             }
             j += 2;
             step++;
-            if (step > 12) break; // Schutz vor endloser Schleife bei kaputten Daten
+            if (step > 12) break;
           }
-          if (block.name && block.ww && block.result && (block.result === "S" || block.result === "N")) {
+          if (
+            block.name &&
+            (block.result === "S" || block.result === "N" || block.result === "W" || block.result === "Z")
+          ) {
             parsed.push({
               name: block.name,
-              ww: block.ww,
+              ww: block.ww || "",
               result: block.result,
+              score: block.score || "",
+              isWalkover: block.result === "W" || block.result === "Z",
             });
           }
           i = j;
           continue;
         }
 
-        // Universelle Blöcke für alle bisherigen Formate:
-
+        // --- Blockformate ---
         // 6er Block (Auslandresultat etc.)
         if (
           i + 5 < lines.length &&
@@ -114,14 +118,13 @@ export default function SwissTennisRanking() {
           /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
           ["S", "N", "W", "Z"].includes(lines[i + 5])
         ) {
-          const code = lines[i + 5];
-          if (code === "S" || code === "N") {
-            parsed.push({
-              name: lines[i + 1],
-              ww: lines[i + 2].replace(",", "."),
-              result: code,
-            });
-          }
+          parsed.push({
+            name: lines[i + 1],
+            ww: lines[i + 2].replace(",", "."),
+            result: lines[i + 5],
+            score: lines[i + 4],
+            isWalkover: lines[i + 5] === "W" || lines[i + 5] === "Z",
+          });
           i += 6;
           continue;
         }
@@ -133,14 +136,13 @@ export default function SwissTennisRanking() {
           /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 5]) &&
           ["S", "N", "W", "Z"].includes(lines[i + 6])
         ) {
-          const code = lines[i + 6];
-          if (code === "S" || code === "N") {
-            parsed.push({
-              name: lines[i + 2],
-              ww: lines[i + 3].replace(",", "."),
-              result: code,
-            });
-          }
+          parsed.push({
+            name: lines[i + 2],
+            ww: lines[i + 3].replace(",", "."),
+            result: lines[i + 6],
+            score: lines[i + 5],
+            isWalkover: lines[i + 6] === "W" || lines[i + 6] === "Z",
+          });
           i += 7;
           continue;
         }
@@ -151,14 +153,13 @@ export default function SwissTennisRanking() {
           /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
           ["S", "N", "W", "Z"].includes(lines[i + 7])
         ) {
-          const code = lines[i + 7];
-          if (code === "S" || code === "N") {
-            parsed.push({
-              name: lines[i + 3],
-              ww: lines[i + 4].replace(",", "."),
-              result: code,
-            });
-          }
+          parsed.push({
+            name: lines[i + 3],
+            ww: lines[i + 4].replace(",", "."),
+            result: lines[i + 7],
+            score: lines[i + 5],
+            isWalkover: lines[i + 7] === "W" || lines[i + 7] === "Z",
+          });
           i += 8;
           continue;
         }
@@ -169,17 +170,33 @@ export default function SwissTennisRanking() {
           /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
           ["S", "N", "W", "Z"].includes(lines[i + 6])
         ) {
-          const code = lines[i + 6];
-          if (code === "S" || code === "N") {
-            parsed.push({
-              name: lines[i + 2],
-              ww: lines[i + 3].replace(",", "."),
-              result: code,
-            });
-          }
+          parsed.push({
+            name: lines[i + 2],
+            ww: lines[i + 3].replace(",", "."),
+            result: lines[i + 6],
+            score: lines[i + 4],
+            isWalkover: lines[i + 6] === "W" || lines[i + 6] === "Z",
+          });
           i += 7;
           continue;
         }
+
+        // --- Einzelner Walkover (auch wenn kein Score vorhanden) ---
+        if (
+          (lines[i] === "W" || lines[i] === "Z") &&
+          (!parsed.length || (parsed[parsed.length - 1] && parsed[parsed.length - 1].result !== lines[i]))
+        ) {
+          parsed.push({
+            name: "",
+            ww: "",
+            result: lines[i],
+            score: "",
+            isWalkover: true,
+          });
+          i += 1;
+          continue;
+        }
+
         i++;
       }
 
@@ -210,10 +227,21 @@ export default function SwissTennisRanking() {
 
   // Berechnung mit Decay nach Spielanzahl + max. 4 Streichresultaten
   const calculate = () => {
-    let wins = matches.filter((m) => m.result === "S");
-    let losses = matches
+    // Gewertete Matches (Walkover nur MIT Score werten!)
+    let relevantMatches = matches.filter(
+      (m) =>
+        m.result === "S" ||
+        m.result === "N" ||
+        (
+          (m.result === "W" || m.result === "Z") &&
+          m.score &&
+          m.score.length > 1
+        )
+    );
+    let wins = relevantMatches.filter((m) => m.result === "S" || (m.result === "W" && m.score));
+    let losses = relevantMatches
       .map((m, i) => ({ ...m, index: i }))
-      .filter((m) => m.result === "N");
+      .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
 
     const numGames = wins.length + losses.length;
     const decay = estimateDecay(numGames);
@@ -231,11 +259,11 @@ export default function SwissTennisRanking() {
     }
 
     const expWins = wins.reduce(
-      (sum, m) => sum + Math.exp(parseFloat(m.ww)),
+      (sum, m) => sum + Math.exp(parseFloat(m.ww || 0)),
       0
     );
     const expLosses = losses.reduce(
-      (sum, m) => sum + Math.exp(-parseFloat(m.ww)),
+      (sum, m) => sum + Math.exp(-parseFloat(m.ww || 0)),
       0
     );
 
@@ -290,12 +318,31 @@ export default function SwissTennisRanking() {
       </div>
 
       {playerName && (
-        <div className="mb-2" style={{ textAlign: "center", fontWeight: 600, fontSize: "1.13em" }}>
+        <div className="player-name-main" style={{ textAlign: "center" }}>
           {playerName}
         </div>
       )}
 
       <div style={{ textAlign: "center" }}>
+        <div className="btn-row" style={{ marginBottom: 18 }}>
+          <button
+            type="button"
+            onClick={() => setShowImport(!showImport)}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
+          </button>
+          {matches.length > 0 && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="bg-red-600 text-white px-4 py-2 rounded"
+              style={{ marginLeft: 14 }}
+            >
+              Alle Daten löschen
+            </button>
+          )}
+        </div>
         <div className="mb-4">
           <label className="block">Start-Wettkampfwert (W₀):</label>
           <input
@@ -352,26 +399,6 @@ export default function SwissTennisRanking() {
             (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setShowImport(!showImport)}
-          className="bg-blue-500 text-white px-4 py-2 rounded mb-2"
-          style={{ margin: "0 auto", display: "block" }}
-        >
-          {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
-        </button>
-
-        {matches.length > 0 && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="bg-red-600 text-white px-4 py-2 rounded mb-4"
-            style={{ margin: "0 auto", display: "block" }}
-          >
-            Alle Daten löschen
-          </button>
-        )}
       </div>
 
       {showImport && (
@@ -416,61 +443,85 @@ export default function SwissTennisRanking() {
                 </tr>
               </thead>
               <tbody>
-                {matches.map((m, i) => (
-                  <tr
-                    key={i}
-                    className={
-                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
-                        ? "stricken-row"
-                        : ""
-                    }
-                    title={
-                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
-                        ? "Streichresultat"
-                        : ""
-                    }
-                  >
-                    <td className="border px-2 text-center">{m.name}</td>
-                    <td className="border px-2 text-center">{m.ww}</td>
-                    <td className="border px-2 text-center">
-                      <span
-                        className={
-                          "result-circle " +
-                          (m.result === "S"
-                            ? "result-s"
-                            : m.result === "N"
-                            ? "result-n"
-                            : m.result === "W"
-                            ? "result-w"
-                            : "")
-                        }
-                      >
-                        {m.result}
-                      </span>
-                    </td>
-                    <td className="border px-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeMatch(i)}
-                        className="delete-x-btn"
-                        title="Löschen"
-                      >
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {matches.map((m, i) => {
+                  const isUnratedWalkover = (m.result === "W" || m.result === "Z") && (!m.score || m.score.length < 2);
+                  return (
+                    <tr
+                      key={i}
+                      className={
+                        isUnratedWalkover
+                          ? "row-unrated"
+                          : result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                          ? "stricken-row"
+                          : ""
+                      }
+                      title={
+                        isUnratedWalkover
+                          ? "Walkover nicht gewertet"
+                          : result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                          ? "Streichresultat"
+                          : ""
+                      }
+                    >
+                      <td className="border px-2 text-center">{m.name}</td>
+                      <td className="border px-2 text-center">{m.ww}</td>
+                      <td className="border px-2 text-center">
+                        <span
+                          className={
+                            "result-circle " +
+                            (m.result === "S"
+                              ? "result-s"
+                              : m.result === "N"
+                              ? "result-n"
+                              : m.result === "W"
+                              ? "result-w"
+                              : m.result === "Z"
+                              ? "result-z"
+                              : "")
+                          }
+                        >
+                          {m.result}
+                        </span>
+                      </td>
+                      <td className="border px-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeMatch(i)}
+                          className="delete-x-btn"
+                          title="Löschen"
+                        >
+                          ×
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
-      {/* CSS Styles für Striche & Kreise */}
+
+      {/* CSS Styles */}
       <style>
         {`
+          .player-name-main {
+            font-size: 1.55em;
+            font-weight: bold;
+            margin-bottom: 0.8em;
+            color: #123370;
+            letter-spacing: 0.01em;
+          }
+          .btn-row { margin-bottom: 18px; }
           .stricken-row {
             text-decoration: line-through;
             opacity: 0.7;
+          }
+          .row-unrated {
+            background: #f0f0f0;
+            color: #888 !important;
+            font-style: italic;
+            opacity: 0.75;
           }
           .result-circle {
             display: inline-block;
@@ -481,14 +532,10 @@ export default function SwissTennisRanking() {
             text-align: center;
             font-weight: bold;
           }
-          .result-s {
-            background: #3490dc;
-            color: #fff;
-          }
-          .result-n {
-            background: #e3342f;
-            color: #fff;
-          }
+          .result-s { background: #3490dc; color: #fff; }
+          .result-n { background: #e3342f; color: #fff; }
+          .result-w { background: #21b356; color: #fff; }
+          .result-z { background: #ffba00; color: #fff; }
           .delete-x-btn {
             color: #fff;
             background: #e3342f;
