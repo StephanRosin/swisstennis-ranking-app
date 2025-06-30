@@ -13,11 +13,12 @@ export default function SwissTennisRanking() {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
 
-  // Universeller MyTennis-Parser für alle Blocktypen inkl. Spielername & WW
+  // Universeller MyTennis-Parser für alle Blocktypen inkl. "Label: Wert"-Layout
   const parseInput = () => {
     try {
-      const text = inputText;
-      const lines = text
+      // Unicode-Bereinigung: Ersetze unsichtbare Sonderzeichen durch \n
+      const cleanText = inputText.replace(/[\u2028\u2029\u200B\u00A0]/g, "\n");
+      const lines = cleanText
         .split('\n')
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
@@ -44,7 +45,68 @@ export default function SwissTennisRanking() {
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
-        // Universeller Block: Datum, Name, WW, [optional Info], Ergebnis, Code
+        // NEU: Label/Value-Block, z.B. "DATUM\n24.05.2025\nNAME DES GEGNERS\n..."
+        if (
+          (lines[i].toUpperCase() === "DATUM") &&
+          i + 1 < lines.length &&
+          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i + 1])
+        ) {
+          let block = {};
+          let j = i;
+          let step = 0;
+          while (
+            j < lines.length &&
+            (!["DATUM", "Datum"].includes(lines[j]) || j === i)
+          ) {
+            const label = lines[j].toUpperCase();
+            const value = lines[j + 1];
+            if (
+              label === "NAME DES GEGNERS" &&
+              value
+            ) {
+              block.name = value;
+            }
+            if (
+              (label === "WETTK. WERT 4.L." ||
+                label === "WETTKAMPFWERT 4.L." ||
+                label === "WETTKAMPFWERT" ||
+                label === "WW GEGNER" ||
+                label === "WW") &&
+              value &&
+              /^[\d\.,]+$/.test(value.replace(",", "."))
+            ) {
+              block.ww = value.replace(",", ".");
+            }
+            if (
+              (label === "CODE") &&
+              value
+            ) {
+              block.result = value;
+            }
+            if (
+              (label === "RESULTAT" || label === "RESULTATE") &&
+              value
+            ) {
+              block.score = value;
+            }
+            j += 2;
+            step++;
+            if (step > 12) break; // Schutz vor endloser Schleife bei kaputten Daten
+          }
+          if (block.name && block.ww && block.result && (block.result === "S" || block.result === "N")) {
+            parsed.push({
+              name: block.name,
+              ww: block.ww,
+              result: block.result,
+            });
+          }
+          i = j;
+          continue;
+        }
+
+        // Universelle Blöcke für alle bisherigen Formate:
+
+        // 6er Block (Auslandresultat etc.)
         if (
           i + 5 < lines.length &&
           /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
@@ -63,8 +125,7 @@ export default function SwissTennisRanking() {
           i += 6;
           continue;
         }
-
-        // Alternativer Block: Datum, Turnier, Name, WW, Klassierung, Ergebnis, Code
+        // 7er Block
         if (
           i + 6 < lines.length &&
           /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
@@ -83,8 +144,7 @@ export default function SwissTennisRanking() {
           i += 7;
           continue;
         }
-
-        // Für Interclub/Turnier wie gehabt
+        // 8er Block
         if (
           i + 7 < lines.length &&
           /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
@@ -102,8 +162,7 @@ export default function SwissTennisRanking() {
           i += 8;
           continue;
         }
-
-        // Für Turnier (7 Zeilen)
+        // Noch ein 7er Block (Alternative Turnier etc.)
         if (
           i + 6 < lines.length &&
           /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
@@ -121,7 +180,6 @@ export default function SwissTennisRanking() {
           i += 7;
           continue;
         }
-
         i++;
       }
 
@@ -244,7 +302,6 @@ export default function SwissTennisRanking() {
             type="number"
             step="0.001"
             value={startWW}
-			readOnly
             onChange={(e) => setStartWW(parseFloat(e.target.value))}
             className="border p-2 w-32"
             style={{ margin: "0 auto", display: "block" }}
