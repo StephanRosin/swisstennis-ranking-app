@@ -76,9 +76,8 @@ textarea:focus {
   font-size: 1.12em;
   box-shadow: 0 1px 5px #0001;
 }
-.result-s { background: #247ddc; }
-.result-n { background: #eb5757; }
-.result-w { background: #aaaeb4; }
+.result-s { background: #3490dc; color: #fff; } /* Blau */
+.result-n { background: #e3342f; color: #fff; } /* Rot */
 
 .delete-x-btn {
   background: none;

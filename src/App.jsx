@@ -196,6 +196,7 @@ export default function SwissTennisRanking() {
     setPlayerName("");
   };
 
+  // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
   const calculate = () => {
     let relevantMatches = matches.filter(
       (m) =>
@@ -386,6 +387,7 @@ export default function SwissTennisRanking() {
               </thead>
               <tbody>
                 {matches.map((m, i) => {
+                  // Walkover ohne Score: wird angezeigt, aber nicht bewertet
                   const isUnratedWalkover = (m.result === "W" || m.result === "Z") && (!m.score || m.score.length < 2);
                   return (
                     <tr
@@ -411,14 +413,10 @@ export default function SwissTennisRanking() {
                         <span
                           className={
                             "result-circle " +
-                            (m.result === "S"
+                            ((m.result === "S" || m.result === "W")
                               ? "result-s"
-                              : m.result === "N"
+                              : (m.result === "N" || m.result === "Z")
                               ? "result-n"
-                              : m.result === "W"
-                              ? "result-w"
-                              : m.result === "Z"
-                              ? "result-z"
                               : "")
                           }
                         >
@@ -473,7 +471,7 @@ export default function SwissTennisRanking() {
       <style>
         {`
           .player-name-main {
-            font-size: 1.55em;
+            font-size: 1.65em;
             font-weight: bold;
             margin-bottom: 0.8em;
             color: #123370;
@@ -499,10 +497,8 @@ export default function SwissTennisRanking() {
             text-align: center;
             font-weight: bold;
           }
-          .result-s { background: #3490dc; color: #fff; }
-          .result-n { background: #e3342f; color: #fff; }
-          .result-w { background: #21b356; color: #fff; }
-          .result-z { background: #ffba00; color: #fff; }
+          .result-s { background: #3490dc; color: #fff; } /* Blau */
+          .result-n { background: #e3342f; color: #fff; } /* Rot */
           .delete-x-btn {
             color: #fff;
             background: #e3342f;
