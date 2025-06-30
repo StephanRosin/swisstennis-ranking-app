@@ -244,6 +244,7 @@ export default function SwissTennisRanking() {
             type="number"
             step="0.001"
             value={startWW}
+			readOnly
             onChange={(e) => setStartWW(parseFloat(e.target.value))}
             className="border p-2 w-32"
             style={{ margin: "0 auto", display: "block" }}
