@@ -62,36 +62,60 @@ export default function SwissTennisRanking() {
     setMatches([]);
   };
 
-  const calculate = () => {
-    const expWins = matches
-      .filter((m) => m.result === "S")
-      .reduce((sum, m) => sum + Math.exp(parseFloat(m.ww) * decayFactor), 0);
+const calculate = () => {
+  let wins = matches.filter((m) => m.result === "S");
+  let losses = matches.filter((m) => m.result === "N");
 
-    const expLosses = matches
-      .filter((m) => m.result === "N")
-      .reduce((sum, m) => sum + Math.exp(-parseFloat(m.ww) * decayFactor), 0);
+  // Streichresultate-Logik
+  const totalGames = matches.length;
+  const numStreich = Math.floor(totalGames / 6);
 
-    const expW0 = Math.exp(startWW);
-    const expW0Neg = Math.exp(-startWW);
+  // Nur bei mehr als 5 Spielen gibt es Streichresultate!
+  if (numStreich > 0 && losses.length > 0) {
+    // Sortiere Niederlagen nach WW absteigend, entferne die schlechtesten
+    losses = losses
+      .slice() // kopieren, damit Original nicht verändert wird
+      .sort((a, b) => parseFloat(b.ww) - parseFloat(a.ww))
+      .slice(numStreich); // schneidet die schlechtesten ab
+  }
 
-    const lnWins = Math.log(expWins + expW0);
-    const lnLosses = Math.log(expLosses + expW0Neg);
+  const expWins = wins.reduce(
+    (sum, m) => sum + Math.exp(parseFloat(m.ww) * decayFactor),
+    0
+  );
+  const expLosses = losses.reduce(
+    (sum, m) => sum + Math.exp(-parseFloat(m.ww) * decayFactor),
+    0
+  );
 
-    const newWW = 0.5 * (lnWins - lnLosses);
+  const expW0 = Math.exp(startWW);
+  const expW0Neg = Math.exp(-startWW);
 
-    const risk = 1 / 6 + (lnWins + lnLosses) / 6;
+  const lnWins = Math.log(expWins + expW0);
+  const lnLosses = Math.log(expLosses + expW0Neg);
 
-    const total = newWW + risk;
+  const newWW = 0.5 * (lnWins - lnLosses);
 
-    let classification = "Unbekannt";
-    if (total >= 5.844) classification = "R4";
-    else if (total >= 4.721) classification = "R5";
-    else if (total >= 3.448) classification = "R6";
-    else if (total >= 1.837) classification = "R7";
-    else classification = "R8 oder tiefer";
+  const risk = 1 / 6 + (lnWins + lnLosses) / 6;
 
-    return { newWW: newWW.toFixed(3), risk: risk.toFixed(3), total: total.toFixed(3), classification };
+  const total = newWW + risk;
+
+  let classification = "Unbekannt";
+  if (total >= 5.844) classification = "R4";
+  else if (total >= 4.721) classification = "R5";
+  else if (total >= 3.448) classification = "R6";
+  else if (total >= 1.837) classification = "R7";
+  else classification = "R8 oder tiefer";
+
+  return {
+    newWW: newWW.toFixed(3),
+    risk: risk.toFixed(3),
+    total: total.toFixed(3),
+    classification,
+    numStreich,
   };
+};
+
 
   const result = calculate();
 
