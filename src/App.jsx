@@ -4,11 +4,17 @@ export default function SwissTennisRanking() {
   const [inputText, setInputText] = useState("");
   const [matches, setMatches] = useState([]);
   const [startWW, setStartWW] = useState(5.0);
-  const [decayFactor, setDecayFactor] = useState(0.9);
+  const [decayFactor, setDecayFactor] = useState(""); // leer = auto
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Parser unterstützt Turnier- und Interclub-Formate und speichert Walkover ("W") als solchen ab
+  // Decay-Berechnung nach Spielanzahl
+  function estimateDecay(numSpiele) {
+    // Linear zwischen 0.82 (0 Spiele) und 0.98 (ab 12+ Spiele)
+    return Math.min(1, 0.82 + 0.015 * Math.min(numSpiele, 12));
+  }
+
+  // Parser wie vorher (Turnier + Interclub)
   const parseInput = () => {
     try {
       const lines = inputText.trim().split(/\n+/);
@@ -25,7 +31,7 @@ export default function SwissTennisRanking() {
           parsed.push({
             name: lines[i + 2].trim(),
             ww: lines[i + 3].trim(),
-            result: lines[i + 6].trim(), // NICHT als "S" umwandeln!
+            result: lines[i + 6].trim(),
           });
           i += 7;
           continue;
@@ -87,23 +93,28 @@ export default function SwissTennisRanking() {
     setMatches([]);
   };
 
-  // Berechnung mit Streichresultaten, Walkover werden ignoriert
+  // Berechnung mit Decay nach Spielanzahl + Streichresultaten
   const calculate = () => {
-    // Nur echte Siege und Niederlagen werden berechnet!
     let wins = matches.filter((m) => m.result === "S");
     let losses = matches
       .map((m, i) => ({ ...m, index: i }))
       .filter((m) => m.result === "N");
 
-    const totalGames = matches.filter(
-      (m) => m.result === "S" || m.result === "N"
-    ).length;
-    const numStreich = Math.floor(totalGames / 6);
+    // Nur echte Spiele zählen
+    const numGames = wins.length + losses.length;
+    // Decay entweder Auto (nach Spielzahl) oder manuell (wenn Feld ausgefüllt)
+    const decay =
+      decayFactor !== "" && !isNaN(decayFactor)
+        ? parseFloat(decayFactor)
+        : estimateDecay(numGames);
 
-    // Indizes der gestrichenen Niederlagen
+    // Startwert nach Decay
+    const decayedWW = startWW * decay;
+
+    // Streichresultate
+    const numStreich = Math.floor(numGames / 6);
     let gestrichenIdx = [];
     if (numStreich > 0 && losses.length > 0) {
-      // Sortiere Niederlagen nach WW AUFSTEIGEND (schlechteste zuerst)
       const sortedLosses = losses
         .slice()
         .sort((a, b) => parseFloat(a.ww) - parseFloat(b.ww));
@@ -112,27 +123,24 @@ export default function SwissTennisRanking() {
     }
 
     const expWins = wins.reduce(
-      (sum, m) => sum + Math.exp(parseFloat(m.ww) * decayFactor),
+      (sum, m) => sum + Math.exp(parseFloat(m.ww)),
       0
     );
     const expLosses = losses.reduce(
-      (sum, m) => sum + Math.exp(-parseFloat(m.ww) * decayFactor),
+      (sum, m) => sum + Math.exp(-parseFloat(m.ww)),
       0
     );
 
-    const expW0 = Math.exp(startWW);
-    const expW0Neg = Math.exp(-startWW);
+    const expW0 = Math.exp(decayedWW);
+    const expW0_neg = Math.exp(-decayedWW);
 
     const lnWins = Math.log(expWins + expW0);
-    const lnLosses = Math.log(expLosses + expW0Neg);
+    const lnLosses = Math.log(expLosses + expW0_neg);
 
-    const newWW = 0.5 * (lnWins - lnLosses);
+    const W = 0.5 * (lnWins - lnLosses);
+    const R = 1 / 6 + (lnWins + lnLosses) / 6;
+    const total = W + R;
 
-    const risk = 1 / 6 + (lnWins + lnLosses) / 6;
-
-    const total = newWW + risk;
-
-    // Vollständige Klassierungsstufen
     let classification = "Unbekannt";
     if (total >= 10.566) classification = "N4";
     else if (total >= 9.317) classification = "R1";
@@ -146,75 +154,88 @@ export default function SwissTennisRanking() {
     else classification = "R9 oder tiefer";
 
     return {
-      newWW: newWW.toFixed(3),
-      risk: risk.toFixed(3),
+      newWW: W.toFixed(3),
+      risk: R.toFixed(3),
       total: total.toFixed(3),
       classification,
       gestrichenIdx,
       numStreich,
+      decay: decay.toFixed(3),
+      decayedWW: decayedWW.toFixed(3),
+      numGames,
     };
   };
 
   const result = calculate();
 
   return (
-   <div className="p-4 max-w-4xl mx-auto">
-  <h1 className="text-2xl font-bold mb-4">
-    Swiss Tennis Ranking Rechner
-  </h1>
-  <div
-    style={{
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      gap: "32px",
-      marginBottom: "1.5rem",
-    }}
-  >
-    <div style={{ flex: 1 }}>
-      <div className="mb-4">
-        <label className="block">Start-Wettkampfwert (W₀):</label>
-        <input
-          type="number"
-          step="0.001"
-          value={startWW}
-          onChange={(e) => setStartWW(parseFloat(e.target.value))}
-          className="border p-2 w-32"
-        />
-      </div>
+    <div className="p-4 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">
+        Swiss Tennis Ranking Rechner
+      </h1>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "32px",
+          marginBottom: "1.5rem",
+        }}
+      >
+		<div style={{ flex: 1 }}>
+		  <div className="mb-4">
+			<label className="block">Start-Wettkampfwert (W₀):</label>
+			<input
+			  type="number"
+			  step="0.001"
+			  value={startWW}
+			  onChange={(e) => setStartWW(parseFloat(e.target.value))}
+			  className="border p-2 w-32"
+			/>
+		  </div>
 
-      <div className="mb-4">
-        <label className="block">Ranking Decay Faktor (Standard: 0.9):</label>
-        <input
-          type="number"
-          step="0.01"
-          value={decayFactor}
-          onChange={(e) => setDecayFactor(parseFloat(e.target.value))}
-          className="border p-2 w-32"
-        />
+		  <div className="mb-4">
+			<label className="block">
+			  Decay-Faktor (automatisch):
+			</label>
+			<input
+			  type="number"
+			  step="0.001"
+			  value={result.decay}
+			  readOnly
+			  className="border p-2 w-32 bg-gray-100 text-gray-600"
+			  tabIndex={-1}
+			/>
+			<div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+			  ({result.numGames} Spiele)
+			</div>
+		  </div>
+		</div>
+
+        <div
+          className="bg-gray-100 p-4 rounded shadow result-summary-box"
+          style={{
+            minWidth: 220,
+            textAlign: "left",
+          }}
+        >
+          <p>
+            <strong>Neuer WW:</strong> {result.newWW}
+          </p>
+          <p>
+            <strong>Risikozuschlag:</strong> {result.risk}
+          </p>
+          <p>
+            <strong>Gesamtwert:</strong> {result.total}
+          </p>
+          <p>
+            <strong>Klassierung:</strong> {result.classification}
+          </p>
+          <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+            (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
+          </p>
+        </div>
       </div>
-    </div>
-    <div
-      className="bg-gray-100 p-4 rounded shadow result-summary-box"
-      style={{
-        minWidth: 220,
-        textAlign: "left",
-      }}
-    >
-      <p>
-        <strong>Neuer WW:</strong> {result.newWW}
-      </p>
-      <p>
-        <strong>Risikozuschlag:</strong> {result.risk}
-      </p>
-      <p>
-        <strong>Gesamtwert:</strong> {result.total}
-      </p>
-      <p>
-        <strong>Aktuelle Klassierung:</strong> {result.classification}
-      </p>
-    </div>
-  </div>
 
       <button
         onClick={() => setShowImport(!showImport)}
