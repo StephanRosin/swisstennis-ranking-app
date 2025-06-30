@@ -1,21 +1,40 @@
 import React, { useState } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function SwissTennisRanking() {
   const [inputText, setInputText] = useState("");
   const [matches, setMatches] = useState([]);
   const [startWW, setStartWW] = useState(5.0);
-  const [decayFactor, setDecayFactor] = useState(""); // leer = auto
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showDecayTooltip, setShowDecayTooltip] = useState(false);
-  // Decay-Berechnung nach Spielanzahl
-function estimateDecay(numSpiele) {
-  // Linear zwischen 0.82 (0 Spiele) und 1.00 (24+ Spiele)
-  return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
-}
 
+  // Decay-Berechnung: Linear 0.82 bis 1.00 bei 24 Spielen
+  function estimateDecay(numSpiele) {
+    return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
+  }
 
-  // Parser wie vorher (Turnier + Interclub)
+  // PDF Export
+  const exportPDF = async () => {
+    const content = document.getElementById("export-content");
+    if (!content) return;
+    const canvas = await html2canvas(content, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "p",
+      unit: "pt",
+      format: "a4",
+    });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pageWidth - 40;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, "PNG", 20, 20, pdfWidth, pdfHeight);
+    pdf.save("SwissTennis-Ranking.pdf");
+  };
+
+  // Parser für beide Formate + Walkover
   const parseInput = () => {
     try {
       const lines = inputText.trim().split(/\n+/);
@@ -103,13 +122,7 @@ function estimateDecay(numSpiele) {
 
     // Nur echte Spiele zählen
     const numGames = wins.length + losses.length;
-    // Decay entweder Auto (nach Spielzahl) oder manuell (wenn Feld ausgefüllt)
-    const decay =
-      decayFactor !== "" && !isNaN(decayFactor)
-        ? parseFloat(decayFactor)
-        : estimateDecay(numGames);
-
-    // Startwert nach Decay
+    const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
     // Streichresultate
@@ -183,83 +196,87 @@ function estimateDecay(numSpiele) {
           marginBottom: "1.5rem",
         }}
       >
-		<div style={{ flex: 1 }}>
-		  <div className="mb-4">
-			<label className="block">Start-Wettkampfwert (W₀):</label>
-			<input
-			  type="number"
-			  step="0.001"
-			  value={startWW}
-			  onChange={(e) => setStartWW(parseFloat(e.target.value))}
-			  className="border p-2 w-32"
-			/>
-		  </div>
-		 <div className="mb-4" style={{ position: "relative" }}>
-			<label className="block" style={{ display: "inline-block", marginRight: 8 }}>
-			  Decay-Faktor (automatisch):
-			</label>
-			<button
-			  type="button"
-			  onClick={() => setShowDecayTooltip((s) => !s)}
-			  style={{
-				background: "#fde047",
-				border: "none",
-				borderRadius: "50%",
-				color: "#9a7900",
-				width: "1.6em",
-				height: "1.6em",
-				fontWeight: "bold",
-				cursor: "pointer",
-				fontSize: "1em",
-				verticalAlign: "middle",
-				display: "inline-flex",
-				alignItems: "center",
-				justifyContent: "center",
-				marginLeft: 4,
-			  }}
-			  aria-label="Info zum Decay-Faktor"
-			  tabIndex={0}
-			>
-			  i
-			</button>
-			{showDecayTooltip && (
-			  <div
-				style={{
-				  position: "absolute",
-				  left: 0,
-				  top: "2.1em",
-				  background: "#fffbe7",
-				  color: "#7b6000",
-				  padding: "0.7em 1em",
-				  borderRadius: 8,
-				  border: "1.5px solid #ffe066",
-				  boxShadow: "0 4px 16px #0001",
-				  zIndex: 10,
-				  fontSize: "0.98em",
-				  maxWidth: 320,
-				}}
-			  >
-				Decay steigt linear von <b>0.82 (0 Spiele)</b> bis <b>1.00 (24+ Spiele)</b>.<br />
-				Beispiel: 12 Spiele = 0.91, 18 Spiele = 0.96, 24+ Spiele = 1.00
-				<br />
-				<span style={{ color: "#bfa200", fontSize: "0.95em" }}>
-				  Klicke erneut auf das <b>i</b> zum Schließen.
-				</span>
-			  </div>
-			)}
-			<input
-			  type="number"
-			  step="0.001"
-			  value={result.decay}
-			  readOnly
-			  className="border p-2 w-32 bg-gray-100 text-gray-600"
-			  tabIndex={-1}
-			/>
-			<div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-			  ({result.numGames} Spiele)
-			</div>
-		  </div>
+        <div style={{ flex: 1 }}>
+          <div className="mb-4">
+            <label className="block">Start-Wettkampfwert (W₀):</label>
+            <input
+              type="number"
+              step="0.001"
+              value={startWW}
+              onChange={(e) => setStartWW(parseFloat(e.target.value))}
+              className="border p-2 w-32"
+            />
+          </div>
 
+          <div className="mb-4" style={{ position: "relative" }}>
+            <label
+              className="block"
+              style={{ display: "inline-block", marginRight: 8 }}
+            >
+              Decay-Faktor (automatisch):
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowDecayTooltip((s) => !s)}
+              style={{
+                background: "#fde047",
+                border: "none",
+                borderRadius: "50%",
+                color: "#9a7900",
+                width: "1.6em",
+                height: "1.6em",
+                fontWeight: "bold",
+                cursor: "pointer",
+                fontSize: "1em",
+                verticalAlign: "middle",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginLeft: 4,
+              }}
+              aria-label="Info zum Decay-Faktor"
+              tabIndex={0}
+            >
+              i
+            </button>
+            {showDecayTooltip && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: "2.1em",
+                  background: "#fffbe7",
+                  color: "#7b6000",
+                  padding: "0.7em 1em",
+                  borderRadius: 8,
+                  border: "1.5px solid #ffe066",
+                  boxShadow: "0 4px 16px #0001",
+                  zIndex: 10,
+                  fontSize: "0.98em",
+                  maxWidth: 320,
+                }}
+              >
+                Decay steigt linear von <b>0.82 (0 Spiele)</b> bis <b>1.00 (24+ Spiele)</b>.<br />
+                Beispiel: 12 Spiele = 0.91, 18 Spiele = 0.96, 24+ Spiele = 1.00
+                <br />
+                <span style={{ color: "#bfa200", fontSize: "0.95em" }}>
+                  Klicke erneut auf das <b>i</b> zum Schließen.
+                </span>
+              </div>
+            )}
+            <input
+              type="number"
+              step="0.001"
+              value={result.decay}
+              readOnly
+              className="border p-2 w-32 bg-gray-100 text-gray-600"
+              tabIndex={-1}
+            />
+            <div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+              ({result.numGames} Spiele)
+            </div>
+          </div>
+        </div>
         <div
           className="bg-gray-100 p-4 rounded shadow result-summary-box"
           style={{
@@ -292,96 +309,106 @@ function estimateDecay(numSpiele) {
         {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
       </button>
 
-      {showImport && (
-        <div className="mb-4">
-          <label className="block">
-            Importiere Text aus MyTennis (beide Formate unterstützt):
-          </label>
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            rows={12}
-            className="border p-2 w-full"
-          ></textarea>
-          <button
-            onClick={parseInput}
-            className="bg-green-500 text-white px-4 py-2 rounded mt-2"
-          >
-            Importieren & schließen
-          </button>
-          {errorMessage && (
-            <p className="text-red-600 mt-2">{errorMessage}</p>
-          )}
-        </div>
-      )}
+      <button
+        onClick={exportPDF}
+        className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+        style={{ float: "right", marginTop: "-2.2rem" }}
+      >
+        Export to PDF
+      </button>
 
-      {matches.length > 0 && (
-        <div className="mb-4">
-          <button
-            onClick={clearAll}
-            className="bg-red-600 text-white px-4 py-2 rounded mb-2"
-          >
-            Alle Daten löschen
-          </button>
+      <div id="export-content">
+        {showImport && (
+          <div className="mb-4">
+            <label className="block">
+              Importiere Text aus MyTennis (beide Formate unterstützt):
+            </label>
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              rows={12}
+              className="border p-2 w-full"
+            ></textarea>
+            <button
+              onClick={parseInput}
+              className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            >
+              Importieren & schließen
+            </button>
+            {errorMessage && (
+              <p className="text-red-600 mt-2">{errorMessage}</p>
+            )}
+          </div>
+        )}
 
-          <h2 className="text-lg font-semibold mb-2">Importierte Matches:</h2>
-          <table className="min-w-full border">
-            <thead>
-              <tr>
-                <th className="border px-2">Name</th>
-                <th className="border px-2">WW Gegner</th>
-                <th className="border px-2">Resultat</th>
-                <th className="border px-2">Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matches.map((m, i) => (
-                <tr
-                  key={i}
-                  className={
-                    result.gestrichenIdx && result.gestrichenIdx.includes(i)
-                      ? "stricken-row"
-                      : ""
-                  }
-                  title={
-                    result.gestrichenIdx && result.gestrichenIdx.includes(i)
-                      ? "Streichresultat"
-                      : ""
-                  }
-                >
-                  <td className="border px-2 text-center">{m.name}</td>
-                  <td className="border px-2 text-center">{m.ww}</td>
-                  <td className="border px-2 text-center">
-                    <span
-                      className={
-                        "result-circle " +
-                        (m.result === "S"
-                          ? "result-s"
-                          : m.result === "N"
-                          ? "result-n"
-                          : m.result === "W"
-                          ? "result-w"
-                          : "")
-                      }
-                    >
-                      {m.result}
-                    </span>
-                  </td>
-                  <td className="border px-2 text-center">
-                    <button
-                      onClick={() => removeMatch(i)}
-                      className="delete-x-btn"
-                      title="Löschen"
-                    >
-                      ×
-                    </button>
-                  </td>
+        {matches.length > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={clearAll}
+              className="bg-red-600 text-white px-4 py-2 rounded mb-2"
+            >
+              Alle Daten löschen
+            </button>
+
+            <h2 className="text-lg font-semibold mb-2">Importierte Matches:</h2>
+            <table className="min-w-full border">
+              <thead>
+                <tr>
+                  <th className="border px-2">Name</th>
+                  <th className="border px-2">WW Gegner</th>
+                  <th className="border px-2">Resultat</th>
+                  <th className="border px-2">Aktion</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {matches.map((m, i) => (
+                  <tr
+                    key={i}
+                    className={
+                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                        ? "stricken-row"
+                        : ""
+                    }
+                    title={
+                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                        ? "Streichresultat"
+                        : ""
+                    }
+                  >
+                    <td className="border px-2 text-center">{m.name}</td>
+                    <td className="border px-2 text-center">{m.ww}</td>
+                    <td className="border px-2 text-center">
+                      <span
+                        className={
+                          "result-circle " +
+                          (m.result === "S"
+                            ? "result-s"
+                            : m.result === "N"
+                            ? "result-n"
+                            : m.result === "W"
+                            ? "result-w"
+                            : "")
+                        }
+                      >
+                        {m.result}
+                      </span>
+                    </td>
+                    <td className="border px-2 text-center">
+                      <button
+                        onClick={() => removeMatch(i)}
+                        className="delete-x-btn"
+                        title="Löschen"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
