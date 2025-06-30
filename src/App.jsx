@@ -64,19 +64,23 @@ export default function SwissTennisRanking() {
 
 const calculate = () => {
   let wins = matches.filter((m) => m.result === "S");
-  let losses = matches.filter((m) => m.result === "N");
+  let losses = matches
+    .map((m, i) => ({ ...m, index: i }))
+    .filter((m) => m.result === "N");
 
-  // Streichresultate-Logik
   const totalGames = matches.length;
   const numStreich = Math.floor(totalGames / 6);
 
-  // Nur bei mehr als 5 Spielen gibt es Streichresultate!
+  // Indizes der gestrichenen Niederlagen
+  let gestrichenIdx = [];
   if (numStreich > 0 && losses.length > 0) {
-    // Sortiere Niederlagen nach WW absteigend, entferne die schlechtesten
-    losses = losses
-      .slice() // kopieren, damit Original nicht verändert wird
-      .sort((a, b) => parseFloat(b.ww) - parseFloat(a.ww))
-      .slice(numStreich); // schneidet die schlechtesten ab
+    // Schlechteste Niederlagen finden (höchster WW)
+    const sortedLosses = losses
+      .slice()
+      .sort((a, b) => parseFloat(b.ww) - parseFloat(a.ww));
+    gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
+    // Die übrigen Niederlagen werden zur Wertung herangezogen:
+    losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
   }
 
   const expWins = wins.reduce(
@@ -100,21 +104,29 @@ const calculate = () => {
 
   const total = newWW + risk;
 
-  let classification = "Unbekannt";
-  if (total >= 5.844) classification = "R4";
-  else if (total >= 4.721) classification = "R5";
-  else if (total >= 3.448) classification = "R6";
-  else if (total >= 1.837) classification = "R7";
-  else classification = "R8 oder tiefer";
+let classification = "Unbekannt";
+if (total >= 10.566) classification = "N4";
+else if (total >= 9.317) classification = "R1";
+else if (total >= 8.091) classification = "R2";
+else if (total >= 6.894) classification = "R3";
+else if (total >= 5.844) classification = "R4";
+else if (total >= 4.721) classification = "R5";
+else if (total >= 3.448) classification = "R6";
+else if (total >= 1.837) classification = "R7";
+else if (total >= 0.872) classification = "R8";
+else classification = "R9 oder tiefer";
+
 
   return {
     newWW: newWW.toFixed(3),
     risk: risk.toFixed(3),
     total: total.toFixed(3),
     classification,
+    gestrichenIdx,
     numStreich,
   };
 };
+
 
 
   const result = calculate();
@@ -190,9 +202,13 @@ const calculate = () => {
                 <th className="border px-2">Aktion</th>
               </tr>
             </thead>
-           <tbody>
+			<tbody>
 			  {matches.map((m, i) => (
-				<tr key={i}>
+				<tr
+				  key={i}
+				  className={result.gestrichenIdx && result.gestrichenIdx.includes(i) ? "stricken-row" : ""}
+				  title={result.gestrichenIdx && result.gestrichenIdx.includes(i) ? "Streichresultat" : ""}
+				>
 				  <td className="border px-2 text-center">{m.name}</td>
 				  <td className="border px-2 text-center">{m.ww}</td>
 				  <td className="border px-2 text-center">
