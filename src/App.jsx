@@ -60,11 +60,9 @@ export default function SwissTennisRanking() {
               !/^R\d\s*\(\d+\)$|^N\d\s*\(\d+\)$/.test(val) &&
               !/^[NR]\d/.test(val)
             ) return;
-            // Keine Überschriften etc.
             if (val && !["Klassierung", "Klassierungswert", "Wettkampfwert", "Risikozuschlag", "Anzahl Spiele", "Anzahl/Abzug w.o.", "Letzte Klassierung", "Beste Klassierung seit 2004"].includes(label)) {
               info[label] = val;
             }
-            // Für Werte mit Zahlen oder Klammern alles erlauben (sonst bleibt alles wie gehabt)
             if (
               [
                 "Klassierung",
@@ -256,7 +254,7 @@ export default function SwissTennisRanking() {
     setPlayerInfo({});
   };
 
-  // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
+  // Für die Berechnung: Walkover werden wie echte Spiele gewertet, auch bei Streichresultaten!
   const calculate = () => {
     let relevantMatches = matches.filter(
       (m) =>
@@ -268,15 +266,22 @@ export default function SwissTennisRanking() {
           m.score.length > 1
         )
     );
-    let wins = relevantMatches.filter((m) => m.result === "S" || (m.result === "W" && m.score));
+    // S + W (mit Score) sind Wins
+    let wins = relevantMatches.filter(
+      (m) => m.result === "S" || (m.result === "W" && m.score)
+    );
+    // N + Z (mit Score) sind Losses (alle werden für Streichresultate berücksichtigt)
     let losses = relevantMatches
       .map((m, i) => ({ ...m, index: i }))
-      .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
+      .filter(
+        (m) => m.result === "N" || (m.result === "Z" && m.score)
+      );
 
     const numGames = wins.length + losses.length;
     const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
+    // STREICHREGEL: (max 4), immer schlechteste Losses (egal ob N oder Z)
     const numStreich = Math.min(4, Math.floor(numGames / 6));
     let gestrichenIdx = [];
     if (numStreich > 0 && losses.length > 0) {
@@ -346,49 +351,53 @@ export default function SwissTennisRanking() {
         </h1>
       </div>
 
-      {playerName && (
-        <div className="player-name-main" style={{ textAlign: "center" }}>
-          {playerName}
-        </div>
-      )}
+      {/* Spielername + Info: IMMER ZENTRIERT */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        {playerName && (
+          <div className="player-name-main" style={{ textAlign: "center" }}>
+            {playerName}
+          </div>
+        )}
 
-      {playerInfo && Object.keys(playerInfo).length > 0 && (
-        <div
-          style={{
-            maxWidth: 650,
-            margin: "0 auto 1.2em auto",
-            fontSize: "1em",
-            background: "#f7f9fc",
-            borderRadius: 8,
-            padding: "14px 22px",
-            color: "#14214a",
-            boxShadow: "0 2px 6px #0001",
-          }}
-        >
-          <table style={{ width: "100%" }}>
-            <tbody>
-              {[0, 1].map(row => (
-                <tr key={row}>
-                  {infoLabels.slice(row * 6, row * 6 + 6).map(label =>
-                    playerInfo[label] ? (
-                      <React.Fragment key={label}>
-                        <td style={{ fontWeight: "bold", width: "11%" }}>{label}:</td>
-                        <td style={{ width: "10.5%" }}>{playerInfo[label]}</td>
-                      </React.Fragment>
-                    ) : (
-                      <React.Fragment key={label}>
-                        <td></td>
-                        <td></td>
-                      </React.Fragment>
-                    )
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {playerInfo && Object.keys(playerInfo).length > 0 && (
+          <div
+            style={{
+              maxWidth: 650,
+              margin: "0 auto 1.2em auto",
+              fontSize: "1em",
+              background: "#f7f9fc",
+              borderRadius: 8,
+              padding: "14px 22px",
+              color: "#14214a",
+              boxShadow: "0 2px 6px #0001",
+            }}
+          >
+            <table style={{ width: "100%" }}>
+              <tbody>
+                {[0, 1].map(row => (
+                  <tr key={row}>
+                    {infoLabels.slice(row * 6, row * 6 + 6).map(label =>
+                      playerInfo[label] ? (
+                        <React.Fragment key={label}>
+                          <td style={{ fontWeight: "bold", width: "11%" }}>{label}:</td>
+                          <td style={{ width: "10.5%" }}>{playerInfo[label]}</td>
+                        </React.Fragment>
+                      ) : (
+                        <React.Fragment key={label}>
+                          <td></td>
+                          <td></td>
+                        </React.Fragment>
+                      )
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
+      {/* Ergebnis-Box */}
       <div className="bg-gray-100 p-4 rounded shadow result-summary-box"
         style={{
           minWidth: 220,
