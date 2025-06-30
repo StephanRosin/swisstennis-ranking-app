@@ -266,3 +266,188 @@ export default function SwissTennisRanking() {
           <div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
             ({result.numGames} Spiele)
           </div>
+        </div>
+
+        <div
+          className="bg-gray-100 p-4 rounded shadow result-summary-box"
+          style={{
+            minWidth: 220,
+            textAlign: "left",
+            margin: "0 auto 2rem auto",
+            marginBottom: "2rem",
+            maxWidth: 350,
+          }}
+        >
+          <p>
+            <strong>Neuer WW:</strong> {result.newWW}
+          </p>
+          <p>
+            <strong>Risikozuschlag:</strong> {result.risk}
+          </p>
+          <p>
+            <strong>Gesamtwert:</strong> {result.total}
+          </p>
+          <p>
+            <strong>Klassierung:</strong> {result.classification}
+          </p>
+          <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+            (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowImport(!showImport)}
+          className="bg-blue-500 text-white px-4 py-2 rounded mb-2"
+          style={{ margin: "0 auto", display: "block" }}
+        >
+          {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
+        </button>
+
+        {matches.length > 0 && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="bg-red-600 text-white px-4 py-2 rounded mb-4"
+            style={{ margin: "0 auto", display: "block" }}
+          >
+            Alle Daten löschen
+          </button>
+        )}
+      </div>
+
+      {showImport && (
+        <div className="mb-4" style={{ textAlign: "center" }}>
+          <label className="block">
+            Importiere Text aus MyTennis (alle Formate unterstützt):
+          </label>
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            rows={12}
+            className="border p-2 w-full"
+            style={{ maxWidth: 550, margin: "0 auto", display: "block" }}
+          ></textarea>
+          <button
+            type="button"
+            onClick={parseInput}
+            className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            style={{ margin: "0 auto", display: "block" }}
+          >
+            Importieren & schließen
+          </button>
+          {errorMessage && (
+            <p className="text-red-600 mt-2">{errorMessage}</p>
+          )}
+        </div>
+      )}
+
+      {matches.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold mb-2" style={{ textAlign: "center" }}>
+            Importierte Matches:
+          </h2>
+          <div style={{ maxWidth: 700, margin: "0 auto" }}>
+            <table className="min-w-full border" style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th className="border px-2">Name</th>
+                  <th className="border px-2">WW Gegner</th>
+                  <th className="border px-2">Resultat</th>
+                  <th className="border px-2">Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matches.map((m, i) => (
+                  <tr
+                    key={i}
+                    className={
+                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                        ? "stricken-row"
+                        : ""
+                    }
+                    title={
+                      result.gestrichenIdx && result.gestrichenIdx.includes(i)
+                        ? "Streichresultat"
+                        : ""
+                    }
+                  >
+                    <td className="border px-2 text-center">{m.name}</td>
+                    <td className="border px-2 text-center">{m.ww}</td>
+                    <td className="border px-2 text-center">
+                      <span
+                        className={
+                          "result-circle " +
+                          (m.result === "S"
+                            ? "result-s"
+                            : m.result === "N"
+                            ? "result-n"
+                            : m.result === "W"
+                            ? "result-w"
+                            : "")
+                        }
+                      >
+                        {m.result}
+                      </span>
+                    </td>
+                    <td className="border px-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => removeMatch(i)}
+                        className="delete-x-btn"
+                        title="Löschen"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {/* CSS Styles für Striche & Kreise */}
+      <style>
+        {`
+          .stricken-row {
+            text-decoration: line-through;
+            opacity: 0.7;
+          }
+          .result-circle {
+            display: inline-block;
+            border-radius: 50%;
+            width: 2em;
+            height: 2em;
+            line-height: 2em;
+            text-align: center;
+            font-weight: bold;
+          }
+          .result-s {
+            background: #3490dc;
+            color: #fff;
+          }
+          .result-n {
+            background: #e3342f;
+            color: #fff;
+          }
+          .delete-x-btn {
+            color: #fff;
+            background: #e3342f;
+            border: none;
+            border-radius: 50%;
+            width: 2em;
+            height: 2em;
+            font-size: 1.4em;
+            font-weight: bold;
+            line-height: 2em;
+            cursor: pointer;
+          }
+          .delete-x-btn:hover {
+            background: #c1271b;
+          }
+        `}
+      </style>
+    </div>
+  );
+}
