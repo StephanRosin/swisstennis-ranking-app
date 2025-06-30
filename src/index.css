@@ -154,3 +154,65 @@ textarea:focus {
   width: 9px;
   background: #f6f7f8;
 }
+.player-header-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 25px 14px 25px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px #0001;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.player-header {
+  font-size: 2.2em;
+  color: #c8002a;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+
+.player-header-icon {
+  font-size: 1.3em;
+  color: #d2a632;
+  margin-left: 0.5em;
+  filter: drop-shadow(0 0 1px #d2a63288);
+}
+
+.player-info-box {
+  background: #f8fbfd;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px #0001;
+  padding: 22px 18px 18px 18px;
+  margin-bottom: 16px;
+  margin-top: 0px;
+}
+
+.player-info-row {
+  display: flex;
+  flex-direction: row;
+  gap: 36px;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.player-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.player-info-label {
+  color: #002c53;
+  font-weight: 500;
+  font-size: 1em;
+  letter-spacing: 0.01em;
+}
+
+.player-info-value {
+  color: #053362;
+  font-size: 1em;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
