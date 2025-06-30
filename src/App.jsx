@@ -334,7 +334,6 @@ export default function SwissTennisRanking() {
         <div
           className="player-info-table"
           style={{
-            maxWidth: 1100,
 			width:"95%",
             margin: "0 auto 1.3em auto",
             background: "#fff",
@@ -390,36 +389,44 @@ export default function SwissTennisRanking() {
           alignItems: "center",
         }}
       >
-        <div
-          className="bg-gray-100 p-4 rounded shadow result-summary-box"
-          style={{
-            minWidth: 260,
-            maxWidth: 340,
-            textAlign: "left",
-            margin: "0 auto 1.6em auto",
-            background: "#fff",
-            borderRadius: 8,
-            boxShadow: "0 4px 18px #0002",
-            fontSize: "1.14em",
-          }}
-        >
-          <p>
-            <strong>Neuer WW:</strong> {result.newWW}
-          </p>
-          <p>
-            <strong>Risikozuschlag:</strong> {result.risk}
-          </p>
-          <p>
-            <strong>Gesamtwert:</strong> {result.total}
-          </p>
-          <p>
-            <strong>Klassierung:</strong> {result.classification}
-          </p>
-          <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-            (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
-          </p>
-        </div>
-      </div>
+		<div
+		  className="result-summary-box"
+		  style={{
+			margin: "0 auto 1.6em auto",
+			maxWidth: 380,
+			background: "#fff",
+			border: "2px solid #e1e7ef",
+			borderRadius: "14px",
+			boxShadow: "0 3px 16px #0001",
+			padding: "28px 36px 22px 36px",
+			color: "#143986",
+			fontSize: "1.18em",
+			fontWeight: 500,
+			lineHeight: 1.6,
+			letterSpacing: 0,
+			textAlign: "left",
+		  }}
+		>
+		  <div style={{ fontSize: "1.13em", fontWeight: 700, marginBottom: 12, color: "#123370" }}>
+			Neuer WW: <span style={{ color: "#e3342f" }}>{result.newWW}</span>
+		  </div>
+		  <div>
+			<span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
+			<span style={{ color: "#0060a5" }}>{result.risk}</span>
+		  </div>
+		  <div>
+			<span style={{ color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
+			<span style={{ color: "#555" }}>{result.total}</span>
+		  </div>
+		  <div>
+			<span style={{ color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
+			<span style={{ color: "#00822b" }}>{result.classification}</span>
+		  </div>
+		  <div style={{ fontSize: "0.98em", color: "#888", marginTop: 8 }}>
+			(Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
+		  </div>
+		</div>
+
 
       {/* BUTTONS: IMMER SICHTBAR */}
       <div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>

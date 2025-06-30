@@ -141,12 +141,6 @@ textarea:focus {
   background: #a31a1a !important;
 }
 
-.result-summary-box {
-  border: 1.5px solid #e2e6ec;
-  box-shadow: 0 4px 20px #0001;
-  background: #f6f8fb;
-}
-
 ::-webkit-scrollbar-thumb {
   background: #dde3ee;
 }
