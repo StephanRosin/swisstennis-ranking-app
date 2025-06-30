@@ -408,11 +408,11 @@ export default function SwissTennisRanking() {
         </div>
         <div>
           <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
-          <span style={{ color: "#e3342f" }}>{result.total}</span>
+          <span style={{ fontSize: "1.13em", color: "#e3342f" }}>{result.total}</span>
         </div>
         <div>
           <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
-          <span style={{ color: "#00822b" }}>{result.classification}</span>
+          <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
         </div>
         <div style={{ fontSize: "0.98em", color: "#888", marginTop: 8 }}>
           (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
