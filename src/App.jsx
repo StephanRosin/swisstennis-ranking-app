@@ -1,28 +1,12 @@
 import React, { useState } from "react";
 
-export default function SwissTennisRanking() {
+export default function App() {
   const [inputText, setInputText] = useState("");
   const [matches, setMatches] = useState([]);
   const [startWW, setStartWW] = useState(5.0);
   const [playerName, setPlayerName] = useState("");
-  const [playerInfo, setPlayerInfo] = useState({});
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const infoLabels = [
-    "Club",
-    "Alterskat.",
-    "Lizenz-Status",
-    "Interclub Status",
-    "Klassierung",
-    "Klassierungswert",
-    "Wettkampfwert",
-    "Risikozuschlag",
-    "Anzahl Spiele",
-    "Anzahl/Abzug w.o.",
-    "Letzte Klassierung",
-    "Beste Klassierung seit 2004",
-  ];
 
   function estimateDecay(numSpiele) {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
@@ -36,6 +20,7 @@ export default function SwissTennisRanking() {
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
+      // Spielername erkennen
       for (let j = 0; j < lines.length - 1; j++) {
         if (/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.0\)$/.test(lines[j + 1])) {
           setPlayerName(`${lines[j]} ${lines[j + 1]}`);
@@ -43,30 +28,7 @@ export default function SwissTennisRanking() {
         }
       }
 
-      let info = {};
-      let infoBlockStart = lines.findIndex(line =>
-        line.startsWith("Club") ||
-        line.startsWith("Verein") ||
-        line.startsWith("Lizenz-Status")
-      );
-      let infoBlockEnd = lines.findIndex(
-        (line, i) => i > infoBlockStart && line.toLowerCase().includes("resultate")
-      );
-      let infoBlockLines =
-        infoBlockStart !== -1 && infoBlockEnd !== -1
-          ? lines.slice(infoBlockStart, infoBlockEnd)
-          : [];
-
-      infoLabels.forEach(label => {
-        let idx = infoBlockLines.findIndex(line => line.startsWith(label));
-        if (idx !== -1) {
-          let val = infoBlockLines[idx].replace(label, "").replace(/^[:\s]*/, "");
-          if (!val && infoBlockLines[idx + 1]) val = infoBlockLines[idx + 1].trim();
-          info[label] = val;
-        }
-      });
-      if (Object.keys(info).length > 0) setPlayerInfo(info);
-
+      // StartWW setzen wenn im Import enthalten
       const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
       if (
         wwi !== -1 &&
@@ -77,56 +39,10 @@ export default function SwissTennisRanking() {
         setStartWW(parseFloat(wwExtracted));
       }
 
+      // Matches extrahieren (beide Formate)
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
-        if (
-          (lines[i].toUpperCase() === "DATUM") &&
-          i + 1 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i + 1])
-        ) {
-          let block = {};
-          let j = i;
-          let step = 0;
-          while (
-            j < lines.length &&
-            (!["DATUM", "Datum"].includes(lines[j]) || j === i)
-          ) {
-            const label = lines[j].toUpperCase();
-            const value = lines[j + 1];
-            if (label === "NAME DES GEGNERS" && value) block.name = value;
-            if (
-              (label === "WETTK. WERT 4.L." ||
-                label === "WETTKAMPFWERT 4.L." ||
-                label === "WETTKAMPFWERT" ||
-                label === "WW GEGNER" ||
-                label === "WW") &&
-              value &&
-              /^[\d\.,]+$/.test(value.replace(",", "."))
-            ) {
-              block.ww = value.replace(",", ".");
-            }
-            if (label === "CODE" && value) block.result = value;
-            if ((label === "RESULTAT" || label === "RESULTATE") && value) block.score = value;
-            j += 2;
-            step++;
-            if (step > 12) break;
-          }
-          if (
-            block.name &&
-            (block.result === "S" || block.result === "N" || block.result === "W" || block.result === "Z")
-          ) {
-            parsed.push({
-              name: block.name,
-              ww: block.ww || "",
-              result: block.result,
-              score: block.score || "",
-              isWalkover: block.result === "W" || block.result === "Z",
-            });
-          }
-          i = j;
-          continue;
-        }
         if (
           i + 5 < lines.length &&
           /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
@@ -161,38 +77,6 @@ export default function SwissTennisRanking() {
           i += 7;
           continue;
         }
-        if (
-          i + 7 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
-          /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
-          ["S", "N", "W", "Z"].includes(lines[i + 7])
-        ) {
-          parsed.push({
-            name: lines[i + 3],
-            ww: lines[i + 4].replace(",", "."),
-            result: lines[i + 7],
-            score: lines[i + 5],
-            isWalkover: lines[i + 7] === "W" || lines[i + 7] === "Z",
-          });
-          i += 8;
-          continue;
-        }
-        if (
-          i + 6 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
-          /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
-          ["S", "N", "W", "Z"].includes(lines[i + 6])
-        ) {
-          parsed.push({
-            name: lines[i + 2],
-            ww: lines[i + 3].replace(",", "."),
-            result: lines[i + 6],
-            score: lines[i + 4],
-            isWalkover: lines[i + 6] === "W" || lines[i + 6] === "Z",
-          });
-          i += 7;
-          continue;
-        }
         i++;
       }
 
@@ -211,70 +95,187 @@ export default function SwissTennisRanking() {
     }
   };
 
+  const removeMatch = (index) => {
+    setMatches((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAll = () => {
+    setMatches([]);
+    setPlayerName("");
+  };
+
+  function calculate() {
+    let relevantMatches = matches.filter(
+      (m) =>
+        m.result === "S" ||
+        m.result === "N" ||
+        (
+          (m.result === "W" || m.result === "Z") &&
+          m.score &&
+          m.score.length > 1
+        )
+    );
+    let wins = relevantMatches.filter((m) => m.result === "S" || (m.result === "W" && m.score));
+    let losses = relevantMatches
+      .map((m, i) => ({ ...m, index: i }))
+      .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
+
+    const numGames = wins.length + losses.length;
+    const decay = estimateDecay(numGames);
+    const decayedWW = startWW * decay;
+
+    const numStreich = Math.min(4, Math.floor(numGames / 6));
+    let gestrichenIdx = [];
+    if (numStreich > 0 && losses.length > 0) {
+      const sortedLosses = losses
+        .slice()
+        .sort((a, b) => parseFloat(a.ww) - parseFloat(b.ww));
+      gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
+      losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
+    }
+
+    const expWins = wins.reduce(
+      (sum, m) => sum + Math.exp(parseFloat(m.ww || 0)),
+      0
+    );
+    const expLosses = losses.reduce(
+      (sum, m) => sum + Math.exp(-parseFloat(m.ww || 0)),
+      0
+    );
+
+    const expW0 = Math.exp(decayedWW);
+    const expW0_neg = Math.exp(-decayedWW);
+
+    const lnWins = Math.log(expWins + expW0);
+    const lnLosses = Math.log(expLosses + expW0_neg);
+
+    const W = 0.5 * (lnWins - lnLosses);
+    const R = 1 / 6 + (lnWins + lnLosses) / 6;
+    const total = W + R;
+
+    let classification = "Unbekannt";
+    if (total >= 10.565) classification = "N4";
+    else if (total >= 9.317) classification = "R1";
+    else if (total >= 8.091) classification = "R2";
+    else if (total >= 6.894) classification = "R3";
+    else if (total >= 5.844) classification = "R4";
+    else if (total >= 4.721) classification = "R5";
+    else if (total >= 3.448) classification = "R6";
+    else if (total >= 1.837) classification = "R7";
+    else if (total >= 0.872) classification = "R8";
+    else classification = "R9 oder tiefer";
+
+    return {
+      newWW: W.toFixed(3),
+      risk: R.toFixed(3),
+      total: total.toFixed(3),
+      classification,
+      gestrichenIdx,
+      numStreich,
+      decay: decay.toFixed(3),
+      decayedWW: decayedWW.toFixed(3),
+      numGames,
+    };
+  }
+
+  const result = calculate();
+
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <div style={{ maxWidth: 700, margin: "40px auto" }}>
+      <h2 style={{ fontWeight: "bold", fontSize: 28, textAlign: "center" }}>
+        Swisstennis Ranking Rechner
+      </h2>
       {playerName && (
-        <div className="player-header-box">
-          <span className="player-header">{playerName}</span>
-          <span className="player-header-icon">🎾</span>
+        <div style={{ textAlign: "center", fontWeight: 600, color: "#b31c2e", fontSize: 22, marginBottom: 8 }}>
+          {playerName}
         </div>
       )}
-      {playerInfo && Object.keys(playerInfo).length > 0 && (
-        <div className="player-info-box">
-          <div className="player-info-row">
-            <div>
-              <span className="player-info-label">Club</span><br />
-              <span className="player-info-value">{playerInfo["Club"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Alterskat.</span><br />
-              <span className="player-info-value">{playerInfo["Alterskat."]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Lizenz-Status</span><br />
-              <span className="player-info-value">{playerInfo["Lizenz-Status"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Interclub Status</span><br />
-              <span className="player-info-value">{playerInfo["Interclub Status"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Klassierung</span><br />
-              <span className="player-info-value">{playerInfo["Klassierung"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Klassierungswert</span><br />
-              <span className="player-info-value">{playerInfo["Klassierungswert"]}</span>
-            </div>
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        <button onClick={() => setShowImport((v) => !v)}>
+          {showImport ? "Schließen" : "Import"}
+        </button>
+        {matches.length > 0 && (
+          <button onClick={clearAll} style={{ marginLeft: 10, color: "#b31c2e" }}>
+            Alle Daten löschen
+          </button>
+        )}
+      </div>
+      {showImport && (
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            rows={8}
+            cols={60}
+            placeholder="Copy&Paste aus MyTennis"
+            style={{ width: "100%" }}
+          />
+          <div>
+            <button onClick={parseInput} style={{ marginTop: 5 }}>Importieren</button>
           </div>
-          <div className="player-info-row">
-            <div>
-              <span className="player-info-label">Wettkampfwert</span><br />
-              <span className="player-info-value">{playerInfo["Wettkampfwert"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Risikozuschlag</span><br />
-              <span className="player-info-value">{playerInfo["Risikozuschlag"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Anzahl Spiele</span><br />
-              <span className="player-info-value">{playerInfo["Anzahl Spiele"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Anzahl/Abzug w.o.</span><br />
-              <span className="player-info-value">{playerInfo["Anzahl/Abzug w.o."]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Letzte Klassierung</span><br />
-              <span className="player-info-value">{playerInfo["Letzte Klassierung"]}</span>
-            </div>
-            <div>
-              <span className="player-info-label">Beste Klassierung seit 2004</span><br />
-              <span className="player-info-value">{playerInfo["Beste Klassierung seit 2004"]}</span>
-            </div>
-          </div>
+          {errorMessage && <div style={{ color: "red", marginTop: 8 }}>{errorMessage}</div>}
         </div>
       )}
+
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        <b>Start-Wettkampfwert (W₀):</b> <input
+          value={startWW}
+          onChange={(e) => setStartWW(e.target.value)}
+          style={{ width: 60, textAlign: "right" }}
+        />
+      </div>
+
+      <div style={{
+        maxWidth: 700, margin: "0 auto", marginBottom: 24, background: "#f4f4f7", borderRadius: 10, padding: 12
+      }}>
+        <b>Aktueller berechneter Wettkampfwert:</b> {result.newWW}
+        <br />
+        <b>Risikozuschlag:</b> {result.risk}
+        <br />
+        <b>Klassierungswert:</b> {result.total}
+        <br />
+        <b>Klassierung:</b> {result.classification}
+      </div>
+
+      <table style={{
+        borderCollapse: "collapse",
+        width: "100%",
+        background: "#fff",
+        borderRadius: 10,
+        boxShadow: "0 2px 8px #0001",
+        margin: "0 auto"
+      }}>
+        <thead>
+          <tr style={{ background: "#ececec" }}>
+            <th style={{ padding: 6 }}>Name</th>
+            <th style={{ padding: 6 }}>WW Gegner</th>
+            <th style={{ padding: 6 }}>Resultat</th>
+            <th style={{ padding: 6 }}>Score</th>
+            <th style={{ padding: 6 }}>Löschen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {matches.map((m, idx) => (
+            <tr key={idx} style={result.gestrichenIdx && result.gestrichenIdx.includes(idx) ? { textDecoration: "line-through", opacity: 0.5 } : {}}>
+              <td style={{ padding: 5 }}>{m.name}</td>
+              <td style={{ padding: 5 }}>{m.ww}</td>
+              <td style={{
+                padding: 5,
+                color: "#fff",
+                textAlign: "center",
+                background: m.result === "S" || m.result === "W" ? "#1b60b6" : "#d51a2c",
+                borderRadius: 16,
+                minWidth: 24
+              }}>{m.result}</td>
+              <td style={{ padding: 5 }}>{m.score}</td>
+              <td style={{ textAlign: "center", cursor: "pointer", color: "#c00", fontSize: 20 }}
+                onClick={() => removeMatch(idx)}
+                title="Eintrag löschen"
+              >×</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
