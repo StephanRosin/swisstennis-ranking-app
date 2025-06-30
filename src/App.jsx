@@ -170,77 +170,126 @@ function estimateDecay(numSpiele) {
   const result = calculate();
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">
-        Swiss Tennis Ranking Rechner
-      </h1>
+  <div className="p-4 max-w-2xl mx-auto">
+  <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+    <img
+      src="https://www.mytennis.ch/assets/logo.86ab5f81.svg"
+      alt="SwissTennis Logo"
+      style={{ height: 54, margin: "0 auto 0.5rem auto", display: "block" }}
+    />
+    <h1 className="text-2xl font-bold mb-4" style={{ color: "#143986" }}>
+      Swiss Tennis Ranking Rechner
+    </h1>
+  </div>
+
+  <div className="mb-4">
+    <label className="block">Start-Wettkampfwert (W₀):</label>
+    <input
+      type="number"
+      step="0.001"
+      value={startWW}
+      onChange={(e) => setStartWW(parseFloat(e.target.value))}
+      className="border p-2 w-32"
+    />
+  </div>
+
+  <div className="mb-4" style={{ position: "relative" }}>
+    <label
+      className="block"
+      style={{ display: "inline-block", marginRight: 8 }}
+    >
+      Decay-Faktor (automatisch):
+    </label>
+    <button
+      type="button"
+      onClick={() => setShowDecayTooltip((s) => !s)}
+      style={{
+        background: "#fde047",
+        border: "none",
+        borderRadius: "50%",
+        color: "#9a7900",
+        width: "1.6em",
+        height: "1.6em",
+        fontWeight: "bold",
+        cursor: "pointer",
+        fontSize: "1em",
+        verticalAlign: "middle",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: 4,
+      }}
+      aria-label="Info zum Decay-Faktor"
+      tabIndex={0}
+    >
+      i
+    </button>
+    {showDecayTooltip && (
       <div
         style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "32px",
-          marginBottom: "1.5rem",
+          position: "absolute",
+          left: 0,
+          top: "2.1em",
+          background: "#fffbe7",
+          color: "#7b6000",
+          padding: "0.7em 1em",
+          borderRadius: 8,
+          border: "1.5px solid #ffe066",
+          boxShadow: "0 4px 16px #0001",
+          zIndex: 10,
+          fontSize: "0.98em",
+          maxWidth: 320,
         }}
       >
-		<div style={{ flex: 1 }}>
-		  <div className="mb-4">
-			<label className="block">Start-Wettkampfwert (W₀):</label>
-			<input
-			  type="number"
-			  step="0.001"
-			  value={startWW}
-			  onChange={(e) => setStartWW(parseFloat(e.target.value))}
-			  className="border p-2 w-32"
-			/>
-		  </div>
-
-		  <div className="mb-4">
-			<label className="block">
-			  Decay-Faktor (geschätzt):
-			</label>
-			<input
-			  type="number"
-			  step="0.001"
-			  value={result.decay}
-			  readOnly
-			  className="border p-2 w-32 bg-gray-100 text-gray-600"
-			  tabIndex={-1}
-			/>
-			<div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-			  ({result.numGames} Spiele)
-			</div>
-			<div style={{ fontSize: "0.9em", color: "#888" }}>
-			  Decay steigt linear von 0.82 (0 Spiele) bis 1.00 (24+ Spiele).
-			  Beispiel: 12 Spiele = 0.91, 18 Spiele = 0.96, 24+ Spiele = 1.00
-			</div>
-		  </div>
-		</div>
-
-        <div
-          className="bg-gray-100 p-4 rounded shadow result-summary-box"
-          style={{
-            minWidth: 220,
-            textAlign: "left",
-          }}
-        >
-          <p>
-            <strong>Neuer WW:</strong> {result.newWW}
-          </p>
-          <p>
-            <strong>Risikozuschlag:</strong> {result.risk}
-          </p>
-          <p>
-            <strong>Gesamtwert:</strong> {result.total}
-          </p>
-          <p>
-            <strong>Klassierung:</strong> {result.classification}
-          </p>
-          <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-            (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
-          </p>
-        </div>
+        Decay steigt linear von <b>0.82 (0 Spiele)</b> bis <b>1.00 (24+ Spiele)</b>.<br />
+        Beispiel: 12 Spiele = 0.91, 18 Spiele = 0.96, 24+ Spiele = 1.00
+        <br />
+        <span style={{ color: "#bfa200", fontSize: "0.95em" }}>
+          Klicke erneut auf das <b>i</b> zum Schließen.
+        </span>
       </div>
+    )}
+    <input
+      type="number"
+      step="0.001"
+      value={result.decay}
+      readOnly
+      className="border p-2 w-32 bg-gray-100 text-gray-600"
+      tabIndex={-1}
+    />
+    <div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+      ({result.numGames} Spiele)
+    </div>
+  </div>
+
+  {/* Ergebnisbox unter den Feldern */}
+  <div
+    className="bg-gray-100 p-4 rounded shadow result-summary-box"
+    style={{
+      minWidth: 220,
+      textAlign: "left",
+      margin: "0 auto 2rem auto",
+      marginBottom: "2rem",
+      maxWidth: 350,
+    }}
+  >
+    <p>
+      <strong>Neuer WW:</strong> {result.newWW}
+    </p>
+    <p>
+      <strong>Risikozuschlag:</strong> {result.risk}
+    </p>
+    <p>
+      <strong>Gesamtwert:</strong> {result.total}
+    </p>
+    <p>
+      <strong>Klassierung:</strong> {result.classification}
+    </p>
+    <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+      (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
+    </p>
+  </div>
+
 
       <button
         onClick={() => setShowImport(!showImport)}
