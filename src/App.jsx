@@ -36,7 +36,6 @@ export default function SwissTennisRanking() {
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
-      // Spielername erkennen
       for (let j = 0; j < lines.length - 1; j++) {
         if (/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.0\)$/.test(lines[j + 1])) {
           setPlayerName(`${lines[j]} ${lines[j + 1]}`);
@@ -44,7 +43,6 @@ export default function SwissTennisRanking() {
         }
       }
 
-      // === NEU: Robuste Spielerinfos-Extraktion ===
       let info = {};
       let infoBlockStart = lines.findIndex(line =>
         line.startsWith("Club") ||
@@ -62,7 +60,6 @@ export default function SwissTennisRanking() {
       infoLabels.forEach(label => {
         let idx = infoBlockLines.findIndex(line => line.startsWith(label));
         if (idx !== -1) {
-          // Wert ist entweder hinter dem Label oder in der nächsten Zeile
           let val = infoBlockLines[idx].replace(label, "").replace(/^[:\s]*/, "");
           if (!val && infoBlockLines[idx + 1]) val = infoBlockLines[idx + 1].trim();
           info[label] = val;
@@ -70,7 +67,6 @@ export default function SwissTennisRanking() {
       });
       if (Object.keys(info).length > 0) setPlayerInfo(info);
 
-      // StartWW setzen wenn im Import enthalten
       const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
       if (
         wwi !== -1 &&
@@ -81,7 +77,6 @@ export default function SwissTennisRanking() {
         setStartWW(parseFloat(wwExtracted));
       }
 
-      // Matches extrahieren (wie gehabt)
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
@@ -99,12 +94,7 @@ export default function SwissTennisRanking() {
           ) {
             const label = lines[j].toUpperCase();
             const value = lines[j + 1];
-            if (
-              label === "NAME DES GEGNERS" &&
-              value
-            ) {
-              block.name = value;
-            }
+            if (label === "NAME DES GEGNERS" && value) block.name = value;
             if (
               (label === "WETTK. WERT 4.L." ||
                 label === "WETTKAMPFWERT 4.L." ||
@@ -116,18 +106,8 @@ export default function SwissTennisRanking() {
             ) {
               block.ww = value.replace(",", ".");
             }
-            if (
-              (label === "CODE") &&
-              value
-            ) {
-              block.result = value;
-            }
-            if (
-              (label === "RESULTAT" || label === "RESULTATE") &&
-              value
-            ) {
-              block.score = value;
-            }
+            if (label === "CODE" && value) block.result = value;
+            if ((label === "RESULTAT" || label === "RESULTATE") && value) block.score = value;
             j += 2;
             step++;
             if (step > 12) break;
@@ -231,98 +211,8 @@ export default function SwissTennisRanking() {
     }
   };
 
-  const removeMatch = (index) => {
-    const updated = matches.filter((_, i) => i !== index);
-    setMatches(updated);
-  };
-
-  const clearAll = () => {
-    setMatches([]);
-    setPlayerName("");
-    setPlayerInfo({});
-  };
-
-  // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
-  const calculate = () => {
-    let relevantMatches = matches.filter(
-      (m) =>
-        m.result === "S" ||
-        m.result === "N" ||
-        (
-          (m.result === "W" || m.result === "Z") &&
-          m.score &&
-          m.score.length > 1
-        )
-    );
-    let wins = relevantMatches.filter((m) => m.result === "S" || (m.result === "W" && m.score));
-    let losses = relevantMatches
-      .map((m, i) => ({ ...m, index: i }))
-      .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
-
-    const numGames = wins.length + losses.length;
-    const decay = estimateDecay(numGames);
-    const decayedWW = startWW * decay;
-
-    const numStreich = Math.min(4, Math.floor(numGames / 6));
-    let gestrichenIdx = [];
-    if (numStreich > 0 && losses.length > 0) {
-      const sortedLosses = losses
-        .slice()
-        .sort((a, b) => parseFloat(a.ww) - parseFloat(b.ww));
-      gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
-      losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
-    }
-
-    const expWins = wins.reduce(
-      (sum, m) => sum + Math.exp(parseFloat(m.ww || 0)),
-      0
-    );
-    const expLosses = losses.reduce(
-      (sum, m) => sum + Math.exp(-parseFloat(m.ww || 0)),
-      0
-    );
-
-    const expW0 = Math.exp(decayedWW);
-    const expW0_neg = Math.exp(-decayedWW);
-
-    const lnWins = Math.log(expWins + expW0);
-    const lnLosses = Math.log(expLosses + expW0_neg);
-
-    const W = 0.5 * (lnWins - lnLosses);
-    const R = 1 / 6 + (lnWins + lnLosses) / 6;
-    const total = W + R;
-
-    let classification = "Unbekannt";
-    if (total >= 10.565) classification = "N4";
-    else if (total >= 9.317) classification = "R1";
-    else if (total >= 8.091) classification = "R2";
-    else if (total >= 6.894) classification = "R3";
-    else if (total >= 5.844) classification = "R4";
-    else if (total >= 4.721) classification = "R5";
-    else if (total >= 3.448) classification = "R6";
-    else if (total >= 1.837) classification = "R7";
-    else if (total >= 0.872) classification = "R8";
-    else classification = "R9 oder tiefer";
-
-    return {
-      newWW: W.toFixed(3),
-      risk: R.toFixed(3),
-      total: total.toFixed(3),
-      classification,
-      gestrichenIdx,
-      numStreich,
-      decay: decay.toFixed(3),
-      decayedWW: decayedWW.toFixed(3),
-      numGames,
-    };
-  };
-
-  const result = calculate();
-
   return (
     <div className="p-4 max-w-2xl mx-auto">
-
-      {/* Spielername und Info-Box im MyTennis.ch Stil */}
       {playerName && (
         <div className="player-header-box">
           <span className="player-header">{playerName}</span>
@@ -385,9 +275,6 @@ export default function SwissTennisRanking() {
           </div>
         </div>
       )}
-
-      {/* --- Rest deiner App (Import-Button, Tabelle etc.) bleibt unverändert --- */}
-      {/* ... */}
 
       <style>
         {`
