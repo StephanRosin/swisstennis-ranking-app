@@ -411,19 +411,22 @@ export default function SwissTennisRanking() {
           fontWeight: 500,
           lineHeight: 1.6,
           letterSpacing: 0,
-          textAlign: "left",
+          textAlign: "center",
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 12, color: "#123370" }}>
-          Neuer WW: <span style={{ color: "#555" }}>{result.newWW}</span>
+		<div>
+		<span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Neue Berechnung:</span>{" "}
+		 <div>
+          <span style={{ color: "#123370", fontWeight: 700 }}>Wettkampfwert:</span>{" "}
+          <span style={{ color: "#555" }}>{result.newWW}</span>
         </div>
         <div>
           <span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
-          <span style={{ color: "#0060a5" }}>{result.risk}</span>
+          <span style={{ color: "#555" }}>{result.risk}</span>
         </div>
         <div>
-          <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
-          <span style={{ fontSize: "1.13em", color: "#e3342f" }}>{result.total}</span>
+          <span style={{ color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
+          <span style={{ color: "#555" }}>{result.total}</span>
         </div>
         <div>
           <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
