@@ -342,8 +342,7 @@ export default function SwissTennisRanking() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            minWidth: 900,
-            maxWidth: 1180,
+            width: "1700px"
           }}
         >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -400,19 +399,19 @@ export default function SwissTennisRanking() {
           textAlign: "left",
         }}
       >
-        <div style={{ fontSize: "1.13em", fontWeight: 700, marginBottom: 12, color: "#123370" }}>
-          Neuer WW: <span style={{ color: "#e3342f" }}>{result.newWW}</span>
+        <div style={{ fontWeight: 700, marginBottom: 12, color: "#123370" }}>
+          Neuer WW: <span style={{ color: "#555" }}>{result.newWW}</span>
         </div>
         <div>
           <span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
           <span style={{ color: "#0060a5" }}>{result.risk}</span>
         </div>
         <div>
-          <span style={{ color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
-          <span style={{ color: "#555" }}>{result.total}</span>
+          <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
+          <span style={{ color: "#e3342f" }}>{result.total}</span>
         </div>
         <div>
-          <span style={{ color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
+          <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
           <span style={{ color: "#00822b" }}>{result.classification}</span>
         </div>
         <div style={{ fontSize: "0.98em", color: "#888", marginTop: 8 }}>
