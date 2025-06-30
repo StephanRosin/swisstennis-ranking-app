@@ -5,8 +5,24 @@ export default function SwissTennisRanking() {
   const [matches, setMatches] = useState([]);
   const [startWW, setStartWW] = useState(5.0);
   const [playerName, setPlayerName] = useState("");
+  const [playerInfo, setPlayerInfo] = useState({});
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const infoLabels = [
+    "Club",
+    "Alterskat.",
+    "Lizenz-Status",
+    "Interclub Status",
+    "Klassierung",
+    "Klassierungswert",
+    "Wettkampfwert",
+    "Risikozuschlag",
+    "Anzahl Spiele",
+    "Anzahl/Abzug w.o.",
+    "Letzte Klassierung",
+    "Beste Klassierung seit 2004",
+  ];
 
   function estimateDecay(numSpiele) {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
@@ -20,6 +36,7 @@ export default function SwissTennisRanking() {
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
+      // Spielername erkennen
       for (let j = 0; j < lines.length - 1; j++) {
         if (/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.0\)$/.test(lines[j + 1])) {
           setPlayerName(`${lines[j]} ${lines[j + 1]}`);
@@ -27,6 +44,21 @@ export default function SwissTennisRanking() {
         }
       }
 
+      // Spielerinfos extrahieren
+      const info = {};
+      lines.forEach((line, i) => {
+        infoLabels.forEach(label => {
+          if (line.startsWith(label)) {
+            // alles nach dem Label (inkl. evtl. Doppelpunkt) extrahieren
+            info[label] = line.replace(label, "").replace(/^[:\s]*/, "");
+            // Speziell: Wenn Wert fehlt, evtl. auf nächster Zeile
+            if (!info[label] && lines[i + 1]) info[label] = lines[i + 1].trim();
+          }
+        });
+      });
+      if (Object.keys(info).length > 0) setPlayerInfo(info);
+
+      // StartWW setzen wenn im Import enthalten
       const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
       if (
         wwi !== -1 &&
@@ -37,6 +69,7 @@ export default function SwissTennisRanking() {
         setStartWW(parseFloat(wwExtracted));
       }
 
+      // Matches extrahieren (unverändert)
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
@@ -194,6 +227,7 @@ export default function SwissTennisRanking() {
   const clearAll = () => {
     setMatches([]);
     setPlayerName("");
+    setPlayerInfo({});
   };
 
   // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
@@ -289,6 +323,34 @@ export default function SwissTennisRanking() {
       {playerName && (
         <div className="player-name-main" style={{ textAlign: "center" }}>
           {playerName}
+        </div>
+      )}
+
+      {playerInfo && Object.keys(playerInfo).length > 0 && (
+        <div
+          style={{
+            maxWidth: 420,
+            margin: "0 auto 1.2em auto",
+            fontSize: "1em",
+            background: "#f7f9fc",
+            borderRadius: 8,
+            padding: "10px 18px",
+            color: "#14214a",
+            boxShadow: "0 2px 6px #0001",
+          }}
+        >
+          <table style={{ width: "100%" }}>
+            <tbody>
+              {infoLabels.map(label =>
+                playerInfo[label] ? (
+                  <tr key={label}>
+                    <td style={{ fontWeight: "bold", width: "54%" }}>{label}:</td>
+                    <td>{playerInfo[label]}</td>
+                  </tr>
+                ) : null
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
