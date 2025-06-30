@@ -4,18 +4,15 @@ export default function SwissTennisRanking() {
   const [inputText, setInputText] = useState("");
   const [matches, setMatches] = useState([]);
   const [startWW, setStartWW] = useState(5.0);
-  const [decayFactor, setDecayFactor] = useState(""); // leer = auto
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Decay-Berechnung nach Spielanzahl
-function estimateDecay(numSpiele) {
-  // Linear zwischen 0.82 (0 Spiele) und 1.00 (24+ Spiele)
-  return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
-}
+  // Decay-Berechnung: Linear 0.82 bis 1.00 bei 24 Spielen
+  function estimateDecay(numSpiele) {
+    return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
+  }
 
-
-  // Parser wie vorher (Turnier + Interclub)
+  // Parser für beide Formate + Walkover
   const parseInput = () => {
     try {
       const lines = inputText.trim().split(/\n+/);
@@ -103,13 +100,7 @@ function estimateDecay(numSpiele) {
 
     // Nur echte Spiele zählen
     const numGames = wins.length + losses.length;
-    // Decay entweder Auto (nach Spielzahl) oder manuell (wenn Feld ausgefüllt)
-    const decay =
-      decayFactor !== "" && !isNaN(decayFactor)
-        ? parseFloat(decayFactor)
-        : estimateDecay(numGames);
-
-    // Startwert nach Decay
+    const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
     // Streichresultate
@@ -170,76 +161,72 @@ function estimateDecay(numSpiele) {
   const result = calculate();
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">
-        Swiss Tennis Ranking Rechner
-      </h1>
+    <div className="p-4 max-w-2xl mx-auto">
+      <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+        <img
+          src="https://www.mytennis.ch/assets/logo.86ab5f81.svg"
+          alt="SwissTennis Logo"
+          style={{ height: 54, margin: "0 auto 0.5rem auto", display: "block" }}
+        />
+        <h1 className="text-2xl font-bold mb-4" style={{ color: "#143986" }}>
+          Swiss Tennis Ranking Rechner
+        </h1>
+      </div>
+
+      <div className="mb-4">
+        <label className="block">Start-Wettkampfwert (W₀):</label>
+        <input
+          type="number"
+          step="0.001"
+          value={startWW}
+          onChange={(e) => setStartWW(parseFloat(e.target.value))}
+          className="border p-2 w-32"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block">
+          Decay-Faktor (automatisch):
+        </label>
+        <input
+          type="number"
+          step="0.001"
+          value={result.decay}
+          readOnly
+          className="border p-2 w-32 bg-gray-100 text-gray-600"
+          tabIndex={-1}
+        />
+        <div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+          ({result.numGames} Spiele)
+        </div>
+      </div>
+
+      {/* Ergebnisbox unter den Feldern */}
       <div
+        className="bg-gray-100 p-4 rounded shadow result-summary-box"
         style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "32px",
-          marginBottom: "1.5rem",
+          minWidth: 220,
+          textAlign: "left",
+          margin: "0 auto 2rem auto",
+          marginBottom: "2rem",
+          maxWidth: 350,
         }}
       >
-		<div style={{ flex: 1 }}>
-		  <div className="mb-4">
-			<label className="block">Start-Wettkampfwert (W₀):</label>
-			<input
-			  type="number"
-			  step="0.001"
-			  value={startWW}
-			  onChange={(e) => setStartWW(parseFloat(e.target.value))}
-			  className="border p-2 w-32"
-			/>
-		  </div>
-
-		  <div className="mb-4">
-			<label className="block">
-			  Decay-Faktor (geschätzt):
-			</label>
-			<input
-			  type="number"
-			  step="0.001"
-			  value={result.decay}
-			  readOnly
-			  className="border p-2 w-32 bg-gray-100 text-gray-600"
-			  tabIndex={-1}
-			/>
-			<div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-			  ({result.numGames} Spiele)
-			</div>
-			<div style={{ fontSize: "0.9em", color: "#888" }}>
-			  Decay steigt linear von 0.82 (0 Spiele) bis 1.00 (24+ Spiele).
-			  Beispiel: 12 Spiele = 0.91, 18 Spiele = 0.96, 24+ Spiele = 1.00
-			</div>
-		  </div>
-		</div>
-
-        <div
-          className="bg-gray-100 p-4 rounded shadow result-summary-box"
-          style={{
-            minWidth: 220,
-            textAlign: "left",
-          }}
-        >
-          <p>
-            <strong>Neuer WW:</strong> {result.newWW}
-          </p>
-          <p>
-            <strong>Risikozuschlag:</strong> {result.risk}
-          </p>
-          <p>
-            <strong>Gesamtwert:</strong> {result.total}
-          </p>
-          <p>
-            <strong>Klassierung:</strong> {result.classification}
-          </p>
-          <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-            (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
-          </p>
-        </div>
+        <p>
+          <strong>Neuer WW:</strong> {result.newWW}
+        </p>
+        <p>
+          <strong>Risikozuschlag:</strong> {result.risk}
+        </p>
+        <p>
+          <strong>Gesamtwert:</strong> {result.total}
+        </p>
+        <p>
+          <strong>Klassierung:</strong> {result.classification}
+        </p>
+        <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+          (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
+        </p>
       </div>
 
       <button
