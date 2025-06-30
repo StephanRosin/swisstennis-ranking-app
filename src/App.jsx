@@ -9,6 +9,7 @@ export default function SwissTennisRanking() {
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Reihenfolge & Labels für Spielerinfo
   const infoLabels = [
     "Club",
     "Alterskat.",
@@ -44,15 +45,40 @@ export default function SwissTennisRanking() {
         }
       }
 
-      // Spielerinfos extrahieren
+      // Spielerinfos extrahieren, mit besserer Klassierungserkennung
       const info = {};
       lines.forEach((line, i) => {
         infoLabels.forEach(label => {
           if (line.startsWith(label)) {
-            // alles nach dem Label (inkl. evtl. Doppelpunkt) extrahieren
-            info[label] = line.replace(label, "").replace(/^[:\s]*/, "");
-            // Speziell: Wenn Wert fehlt, evtl. auf nächster Zeile
-            if (!info[label] && lines[i + 1]) info[label] = lines[i + 1].trim();
+            let val = line.replace(label, "").replace(/^[:\s]*/, "");
+            // Falls der Wert fehlt, nimm nächste Zeile
+            if (!val && lines[i + 1]) val = lines[i + 1].trim();
+            // Für Klassierung: nur plausible Werte nehmen
+            if (
+              label === "Klassierung" &&
+              val &&
+              !/^R\d\s*\(\d+\)$|^N\d\s*\(\d+\)$/.test(val) &&
+              !/^[NR]\d/.test(val)
+            ) return;
+            // Keine Überschriften etc.
+            if (val && !["Klassierung", "Klassierungswert", "Wettkampfwert", "Risikozuschlag", "Anzahl Spiele", "Anzahl/Abzug w.o.", "Letzte Klassierung", "Beste Klassierung seit 2004"].includes(label)) {
+              info[label] = val;
+            }
+            // Für Werte mit Zahlen oder Klammern alles erlauben (sonst bleibt alles wie gehabt)
+            if (
+              [
+                "Klassierung",
+                "Klassierungswert",
+                "Wettkampfwert",
+                "Risikozuschlag",
+                "Anzahl Spiele",
+                "Anzahl/Abzug w.o.",
+                "Letzte Klassierung",
+                "Beste Klassierung seit 2004",
+              ].includes(label)
+            ) {
+              info[label] = val;
+            }
           }
         });
       });
@@ -69,7 +95,7 @@ export default function SwissTennisRanking() {
         setStartWW(parseFloat(wwExtracted));
       }
 
-      // Matches extrahieren (unverändert)
+      // Matches extrahieren (wie gehabt)
       const parsed = [];
       let i = 0;
       while (i < lines.length) {
@@ -329,86 +355,64 @@ export default function SwissTennisRanking() {
       {playerInfo && Object.keys(playerInfo).length > 0 && (
         <div
           style={{
-            maxWidth: 420,
+            maxWidth: 650,
             margin: "0 auto 1.2em auto",
             fontSize: "1em",
             background: "#f7f9fc",
             borderRadius: 8,
-            padding: "10px 18px",
+            padding: "14px 22px",
             color: "#14214a",
             boxShadow: "0 2px 6px #0001",
           }}
         >
           <table style={{ width: "100%" }}>
             <tbody>
-              {infoLabels.map(label =>
-                playerInfo[label] ? (
-                  <tr key={label}>
-                    <td style={{ fontWeight: "bold", width: "54%" }}>{label}:</td>
-                    <td>{playerInfo[label]}</td>
-                  </tr>
-                ) : null
-              )}
+              {[0, 1].map(row => (
+                <tr key={row}>
+                  {infoLabels.slice(row * 6, row * 6 + 6).map(label =>
+                    playerInfo[label] ? (
+                      <React.Fragment key={label}>
+                        <td style={{ fontWeight: "bold", width: "11%" }}>{label}:</td>
+                        <td style={{ width: "10.5%" }}>{playerInfo[label]}</td>
+                      </React.Fragment>
+                    ) : (
+                      <React.Fragment key={label}>
+                        <td></td>
+                        <td></td>
+                      </React.Fragment>
+                    )
+                  )}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
 
-      <div style={{ textAlign: "center" }}>
-        <div className="mb-4">
-          <label className="block">Start-Wettkampfwert (W₀):</label>
-          <input
-            type="number"
-            step="0.001"
-            value={startWW}
-            onChange={(e) => setStartWW(parseFloat(e.target.value))}
-            className="border p-2 w-32"
-            style={{ margin: "0 auto", display: "block" }}
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block">
-            Decay-Faktor (automatisch):
-          </label>
-          <input
-            type="number"
-            step="0.001"
-            value={result.decay}
-            readOnly
-            className="border p-2 w-32 bg-gray-100 text-gray-600"
-            style={{ margin: "0 auto", display: "block" }}
-            tabIndex={-1}
-          />
-          <div style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-            ({result.numGames} Spiele)
-          </div>
-        </div>
-        <div
-          className="bg-gray-100 p-4 rounded shadow result-summary-box"
-          style={{
-            minWidth: 220,
-            textAlign: "left",
-            margin: "0 auto 2rem auto",
-            marginBottom: "2rem",
-            maxWidth: 350,
-          }}
-        >
-          <p>
-            <strong>Neuer WW:</strong> {result.newWW}
-          </p>
-          <p>
-            <strong>Risikozuschlag:</strong> {result.risk}
-          </p>
-          <p>
-            <strong>Gesamtwert:</strong> {result.total}
-          </p>
-          <p>
-            <strong>Klassierung:</strong> {result.classification}
-          </p>
-          <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
-            (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
-          </p>
-        </div>
+      <div className="bg-gray-100 p-4 rounded shadow result-summary-box"
+        style={{
+          minWidth: 220,
+          textAlign: "left",
+          margin: "0 auto 2rem auto",
+          marginBottom: "2rem",
+          maxWidth: 350,
+          background: "#f4f4f7"
+        }}>
+        <p>
+          <strong>Neuer WW:</strong> {result.newWW}
+        </p>
+        <p>
+          <strong>Risikozuschlag:</strong> {result.risk}
+        </p>
+        <p>
+          <strong>Gesamtwert:</strong> {result.total}
+        </p>
+        <p>
+          <strong>Klassierung:</strong> {result.classification}
+        </p>
+        <p style={{ fontSize: "0.95em", color: "#666", marginTop: 4 }}>
+          (Decay: {result.decay}, W₀ nach Decay: {result.decayedWW})
+        </p>
       </div>
 
       {/* BUTTONS: IMMER SICHTBAR */}
@@ -575,6 +579,9 @@ export default function SwissTennisRanking() {
           }
           .delete-x-btn:hover {
             background: #c1271b;
+          }
+          @media (max-width: 800px) {
+            .player-info-table td { font-size: 0.92em; }
           }
         `}
       </style>
