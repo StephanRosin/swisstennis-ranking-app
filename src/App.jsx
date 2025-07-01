@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ratingConfig from './ratingConfig.json';
 
 export default function SwissTennisRanking() {
   const [inputText, setInputText] = useState("");
@@ -24,10 +25,7 @@ export default function SwissTennisRanking() {
     "Beste Klassierung seit 2004",
   ];
 
-  function estimateDecay(numSpiele) {
-    return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
-  }
-	const importFromClipboard = async () => {
+ 	const importFromClipboard = async () => {
 	  try {
 		const clipboardText = await navigator.clipboard.readText();
 		setInputText(clipboardText);
@@ -270,7 +268,11 @@ export default function SwissTennisRanking() {
       .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
 
     const numGames = wins.length + losses.length;
-    const decay = estimateDecay(numGames);
+	const decay = Math.min(
+  1,
+  ratingConfig.decayBase +
+    ratingConfig.decayFactor * Math.min(numGames, ratingConfig.decayMax)
+);
     const decayedWW = startWW * decay;
 
     const numStreich = Math.min(4, Math.floor(numGames / 6));
@@ -302,17 +304,13 @@ export default function SwissTennisRanking() {
     const R = 1 / 6 + (lnWins + lnLosses) / 6;
     const total = W + R;
 
-    let classification = "Unbekannt";
-    if (total >= 10.565) classification = "N4";
-    else if (total >= 9.317) classification = "R1";
-    else if (total >= 8.091) classification = "R2";
-    else if (total >= 6.894) classification = "R3";
-    else if (total >= 5.844) classification = "R4";
-    else if (total >= 4.721) classification = "R5";
-    else if (total >= 3.448) classification = "R6";
-    else if (total >= 1.837) classification = "R7";
-    else if (total >= 0.872) classification = "R8";
-    else classification = "R9 oder tiefer";
+	let classification = "Unbekannt";
+	for (let i = 0; i < ratingConfig.thresholds.length; i++) {
+	  if (total >= ratingConfig.thresholds[i].value) {
+		classification = ratingConfig.thresholds[i].label;
+		break;
+	  }
+	}
 
     return {
       newWW: W.toFixed(3),

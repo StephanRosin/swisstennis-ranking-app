@@ -1,0 +1,17 @@
+{
+  "thresholds": [
+    { "value": 10.565, "label": "N4" },
+    { "value": 9.317, "label": "R1" },
+    { "value": 8.091, "label": "R2" },
+    { "value": 6.894, "label": "R3" },
+    { "value": 5.844, "label": "R4" },
+    { "value": 4.721, "label": "R5" },
+    { "value": 3.448, "label": "R6" },
+    { "value": 1.837, "label": "R7" },
+    { "value": 0.872, "label": "R8" },
+    { "value": -9999, "label": "R9 oder tiefer" }
+  ],
+  "decayBase": 0.82,
+  "decayFactor": 0.0075,
+  "decayMax": 24
+}
