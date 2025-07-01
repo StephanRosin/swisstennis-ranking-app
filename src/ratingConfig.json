@@ -23,7 +23,6 @@
     "R8": [7825, 11824],
     "R9": [11825, 99999]
   },
-  ,
   "decayBase": 0.82,
   "decayMax": 36,
   "classBoundaries": {
