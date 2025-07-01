@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import ratingConfig from './ratingConfig.json';
-
+import { detectGenderAndClassByRang } from "./utils";
+import ratingConfig from "./ratingConfig.json";
 export default function SwissTennisRanking() {
   const [inputText, setInputText] = useState("");
   const [matches, setMatches] = useState([]);
@@ -9,6 +9,7 @@ export default function SwissTennisRanking() {
   const [playerInfo, setPlayerInfo] = useState({});
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [gender, setGender] = useState(null);
 
   const infoLabels = [
     "Club",
@@ -25,18 +26,24 @@ export default function SwissTennisRanking() {
     "Beste Klassierung seit 2004",
   ];
 
- 	const importFromClipboard = async () => {
-	  try {
-		const clipboardText = await navigator.clipboard.readText();
-		setInputText(clipboardText);
-		setShowImport(false);
-		setTimeout(() => {
-		  parseInput(); // Verarbeitet den Text aus der Zwischenablage
-		}, 10);
-	  } catch (err) {
-		setErrorMessage("Konnte Zwischenablage nicht lesen: " + err.message);
+  function estimateDecay(numSpiele) {
+    return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
+  }
+	function calcClassByCValue(gender, cValue) {
+	  // Hole das richtige Grenzwert-Objekt
+	  const boundaries = ratingConfig.classBoundaries[gender];
+	  if (!boundaries) return "Unbekannt";
+
+	  // Sortiere Grenzwerte nach Wert DESC
+	  const entries = Object.entries(boundaries).sort((a, b) => b[1] - a[1]);
+
+	  // Finde die passende Klassierung
+	  for (const [klasse, minWert] of entries) {
+		if (cValue >= minWert) return klasse;
 	  }
-	};
+	  // Wenn kleiner als alle Schwellen -> R9
+	  return "R9 oder tiefer";
+	}
 
   const parseInput = () => {
     try {
@@ -55,32 +62,32 @@ export default function SwissTennisRanking() {
       }
 
       // Spielerinfos extrahieren
-		const info = {};
-		lines.forEach((line, i) => {
-		  infoLabels.forEach(label => {
-			if (line.startsWith(label)) {
-			  let val = line.replace(label, "").replace(/^[:\s]*/, "");
-			  // Wert steht ggf. in der nächsten Zeile
-			  if (!val && lines[i + 1]) {
-				val = lines[i + 1].trim();
-			  }
-			  // Für Klassierung: nur nehmen, wenn es wie ein Klassierungswert aussieht
-			  if (label === "Klassierung") {
-				if (/^(R\d|N\d)(\s*\(\d+\))?$/.test(val)) {
-				  info[label] = val;
-				}
-			  } else {
-				info[label] = val;
-			  }
-			}
-		  });
-		});
+      const info = {};
+      lines.forEach((line, i) => {
+        infoLabels.forEach(label => {
+          if (line.startsWith(label)) {
+            let val = line.replace(label, "").replace(/^[:\s]*/, "");
+            if (!val && lines[i + 1]) val = lines[i + 1].trim();
+            // Für Klassierung: nur nehmen, wenn es wie ein Klassierungswert aussieht
+            if (label === "Klassierung") {
+              if (/^(R\d|N\d)(\s*\(\d+\))?$/.test(val)) {
+                info[label] = val;
+              }
+            } else {
+              info[label] = val;
+            }
+          }
+        });
+      });
 
-
-
-
-      if (Object.keys(info).length > 0) setPlayerInfo(info);
-
+        if (Object.keys(info).length > 0) setPlayerInfo(info);
+		let detected = null;
+		if (info["Klassierung"]) {
+		  detected = detectGenderAndClassByRang(info["Klassierung"], ratingConfig);
+		  // detected.gender  // "male" oder "female" oder null
+		  // detected.klassierung // N4, R1, ...
+		  // detected.rang
+		}
       // StartWW setzen wenn im Import enthalten
       const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
       if (
@@ -110,12 +117,7 @@ export default function SwissTennisRanking() {
           ) {
             const label = lines[j].toUpperCase();
             const value = lines[j + 1];
-            if (
-              label === "NAME DES GEGNERS" &&
-              value
-            ) {
-              block.name = value;
-            }
+            if (label === "NAME DES GEGNERS" && value) block.name = value;
             if (
               (label === "WETTK. WERT 4.L." ||
                 label === "WETTKAMPFWERT 4.L." ||
@@ -127,18 +129,9 @@ export default function SwissTennisRanking() {
             ) {
               block.ww = value.replace(",", ".");
             }
-            if (
-              (label === "CODE") &&
-              value
-            ) {
-              block.result = value;
-            }
-            if (
-              (label === "RESULTAT" || label === "RESULTATE") &&
-              value
-            ) {
+            if (label === "CODE" && value) block.result = value;
+            if ((label === "RESULTAT" || label === "RESULTATE") && value)
               block.score = value;
-            }
             j += 2;
             step++;
             if (step > 12) break;
@@ -246,6 +239,7 @@ export default function SwissTennisRanking() {
     setMatches([]);
     setPlayerName("");
     setPlayerInfo({});
+    setGender(null);
   };
 
   // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
@@ -268,14 +262,7 @@ export default function SwissTennisRanking() {
       .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
 
     const numGames = wins.length + losses.length;
-	const decayFactor = (1 - ratingConfig.decayBase) / ratingConfig.decayMax;
-
-	const decay = Math.min(
-	  1,
-	  ratingConfig.decayBase +
-		decayFactor * Math.min(numGames, ratingConfig.decayMax)
-	);
-
+    const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
     const numStreich = Math.min(4, Math.floor(numGames / 6));
@@ -307,13 +294,9 @@ export default function SwissTennisRanking() {
     const R = 1 / 6 + (lnWins + lnLosses) / 6;
     const total = W + R;
 
-	let classification = "Unbekannt";
-	for (let i = 0; i < ratingConfig.thresholds.length; i++) {
-	  if (total >= ratingConfig.thresholds[i].value) {
-		classification = ratingConfig.thresholds[i].label;
-		break;
-	  }
-	}
+    // Dynamische Grenzen je nach Geschlecht!
+    // Beispiel: Nimm einen Array von [min, max] pro Klasse (je nach gender)
+    let classification = calcClassByCValue(gender, total);
 
     return {
       newWW: W.toFixed(3),
@@ -355,6 +338,14 @@ export default function SwissTennisRanking() {
           }}
         >
           {playerName}
+        </div>
+      )}
+
+      {gender && (
+        <div style={{ textAlign: "center", marginBottom: 10 }}>
+          <span style={{ color: "#888", fontSize: "1.02em" }}>
+            (Erkanntes Geschlecht: <b>{gender === "male" ? "Mann" : "Frau"}</b>)
+          </span>
         </div>
       )}
 
@@ -408,70 +399,68 @@ export default function SwissTennisRanking() {
         </div>
       )}
 
-      {/* Box erscheint nur wenn Matches da sind */}
-		{matches.length > 0 && (
-		  <div
-			className="result-summary-box"
-			style={{
-			  margin: "0 auto 1.6em auto",
-			  maxWidth: 380,
-			  background: "#fff",
-			  border: "2px solid #e1e7ef",
-			  borderRadius: "14px",
-			  boxShadow: "0 3px 16px #0001",
-			  padding: "28px 36px 22px 36px",
-			  color: "#143986",
-			  fontSize: "1.18em",
-			  fontWeight: 500,
-			  lineHeight: 1.6,
-			  letterSpacing: 0,
-			  textAlign: "center",
-			}}
-		  >
-			<div>
-			  <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Neue Berechnung:</span>{" "}
-			</div>
-			<div>
-			  <span style={{ color: "#123370", fontWeight: 700 }}>Wettkampfwert:</span>{" "}
-			  <span style={{ color: "#555" }}>{result.newWW}</span>
-			</div>
-			<div>
-			  <span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
-			  <span style={{ color: "#555" }}>{result.risk}</span>
-			</div>
-			<div>
-			  <span style={{ color: "#123370", fontWeight: 700 }}>Klassierungswert:</span>{" "}
-			  <span style={{ color: "#555" }}>{result.total}</span>
-			</div>
-			<div>
-			  <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
-			  <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
-			</div>
-		  </div>
-		)}
+      {/* Neue Box im mytennis-Stil */}
+      {matches.length > 0 && (
+      <div
+        className="result-summary-box"
+        style={{
+          margin: "0 auto 1.6em auto",
+          maxWidth: 380,
+          background: "#fff",
+          border: "2px solid #e1e7ef",
+          borderRadius: "14px",
+          boxShadow: "0 3px 16px #0001",
+          padding: "28px 36px 22px 36px",
+          color: "#143986",
+          fontSize: "1.18em",
+          fontWeight: 500,
+          lineHeight: 1.6,
+          letterSpacing: 0,
+          textAlign: "center",
+        }}
+      >
+        <div>
+          <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Neue Berechnung:</span>{" "}
+        </div>
+        <div>
+          <span style={{ color: "#123370", fontWeight: 700 }}>Wettkampfwert:</span>{" "}
+          <span style={{ color: "#555" }}>{result.newWW}</span>
+        </div>
+        <div>
+          <span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
+          <span style={{ color: "#555" }}>{result.risk}</span>
+        </div>
+        <div>
+          <span style={{ color: "#123370", fontWeight: 700 }}>Klassierungswert:</span>{" "}
+          <span style={{ color: "#555" }}>{result.total}</span>
+        </div>
+        <div>
+          <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
+          <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
+        </div>
+      </div>
+      )}
 
-		{/* BUTTONS */}
-		<div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>
-		  {matches.length === 0 && (
-			<button
-			  type="button"
-			  onClick={importFromClipboard}
-			  className="bg-blue-500 text-white px-4 py-2 rounded"
-			>
-			  Aus Zwischenablage importieren
-			</button>
-		  )}
-		  {matches.length > 0 && (
-			<button
-			  type="button"
-			  onClick={clearAll}
-			  className="bg-red-600 text-white px-4 py-2 rounded"
-			>
-			  Alle Daten löschen
-			</button>
-		  )}
-		</div>
-
+      {/* BUTTONS */}
+      <div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>
+        {matches.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowImport(!showImport)}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Alle Daten löschen
+          </button>
+        )}
+      </div>
 
       {matches.length > 0 && (
         <div>
