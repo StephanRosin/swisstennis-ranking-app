@@ -27,6 +27,18 @@ export default function SwissTennisRanking() {
   function estimateDecay(numSpiele) {
     return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
   }
+	const importFromClipboard = async () => {
+	  try {
+		const clipboardText = await navigator.clipboard.readText();
+		setInputText(clipboardText);
+		setShowImport(false);
+		setTimeout(() => {
+		  parseInput(); // Verarbeitet den Text aus der Zwischenablage
+		}, 10);
+	  } catch (err) {
+		setErrorMessage("Konnte Zwischenablage nicht lesen: " + err.message);
+	  }
+	};
 
   const parseInput = () => {
     try {
@@ -442,10 +454,10 @@ export default function SwissTennisRanking() {
 		  {matches.length === 0 && (
 			<button
 			  type="button"
-			  onClick={() => setShowImport(!showImport)}
+			  onClick={importFromClipboard}
 			  className="bg-blue-500 text-white px-4 py-2 rounded"
 			>
-			  {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
+			  Aus Zwischenablage importieren
 			</button>
 		  )}
 		  {matches.length > 0 && (
