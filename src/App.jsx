@@ -27,8 +27,10 @@ export default function SwissTennisRanking() {
   ];
 
   function estimateDecay(numSpiele) {
-    return Math.min(1, 0.82 + 0.0075 * Math.min(numSpiele, 24));
-  }
+  const base = ratingConfig.decayBase || 0.82;
+  const max = ratingConfig.decayMax || 60;
+  return Math.min(1, base + (1 - base) * (Math.min(numSpiele, max) / max));
+}
 	function calcClassByCValue(gender, cValue) {
 	  // Hole das richtige Grenzwert-Objekt
 	  const boundaries = ratingConfig.classBoundaries[gender];
