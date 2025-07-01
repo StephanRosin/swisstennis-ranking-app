@@ -84,10 +84,11 @@ export default function SwissTennisRanking() {
 		let detected = null;
 		if (info["Klassierung"]) {
 		  detected = detectGenderAndClassByRang(info["Klassierung"], ratingConfig);
-		  // detected.gender  // "male" oder "female" oder null
-		  // detected.klassierung // N4, R1, ...
-		  // detected.rang
+		  console.log('Klassierung:', info["Klassierung"]);
+		  console.log('detected:', detected);
+		  if (detected && detected.gender) setGender(detected.gender);
 		}
+
       // StartWW setzen wenn im Import enthalten
       const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
       if (
