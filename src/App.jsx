@@ -53,13 +53,27 @@ export default function SwissTennisRanking() {
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
-      // Spielername erkennen
-      for (let j = 0; j < lines.length - 1; j++) {
-        if (/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.0\)$/.test(lines[j + 1])) {
-          setPlayerName(`${lines[j]} ${lines[j + 1]}`);
-          break;
-        }
-      }
+			 // Robuster: Name suchen (erste Zeile mit mind. 2 Wörtern, gefolgt von Lizenznummer in () in nächster Zeile)
+		let foundName = null;
+		for (let j = 0; j < lines.length - 1; j++) {
+		  // Zeilen überspringen, die nichts mit Name zu tun haben
+		  if (
+			lines[j].toLowerCase().includes("favoriten auswählen") ||
+			lines[j].toLowerCase().includes("alle favoriten")
+		  ) continue;
+
+		  // mind. 2 Wörter, mind. 6 Zeichen (keine Zahl am Anfang), nur Buchstaben, evtl. Bindestrich/Apostroph
+		  if (
+			/^[A-Za-zÄÖÜäöüß\-'. ]{6,}$/.test(lines[j]) &&
+			lines[j].split(" ").length >= 2 &&
+			/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.[0-9]\)$/.test(lines[j + 1])
+		  ) {
+			foundName = `${lines[j]} ${lines[j + 1]}`;
+			break;
+		  }
+		}
+		if (foundName) setPlayerName(foundName);
+
 
       // Spielerinfos extrahieren
       const info = {};
