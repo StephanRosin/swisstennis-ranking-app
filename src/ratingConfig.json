@@ -24,7 +24,7 @@
     "R9": [11825, 99999]
   },
   "decayBase": 0.82,
-  "decayMax": 36,
+  "decayMax": 60,
   "classBoundaries": {
     "male": {
       "N4": 10.565,
