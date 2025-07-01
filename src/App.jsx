@@ -426,7 +426,7 @@ export default function SwissTennisRanking() {
           <span style={{ color: "#555" }}>{result.risk}</span>
         </div>
         <div>
-          <span style={{ color: "#123370", fontWeight: 700 }}>Gesamtwert:</span>{" "}
+          <span style={{ color: "#123370", fontWeight: 700 }}>Klassierungswert:</span>{" "}
           <span style={{ color: "#555" }}>{result.total}</span>
         </div>
         <div>
