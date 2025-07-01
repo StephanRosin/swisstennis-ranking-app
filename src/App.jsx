@@ -277,6 +277,7 @@ export default function SwissTennisRanking() {
       .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
 
     const numGames = wins.length + losses.length;
+	const n = numGames > 0 ? numGames : 1; // Verhindert Division durch 0
     const decay = estimateDecay(numGames);
     const decayedWW = startWW * decay;
 
@@ -306,7 +307,7 @@ export default function SwissTennisRanking() {
     const lnLosses = Math.log(expLosses + expW0_neg);
 
     const W = 0.5 * (lnWins - lnLosses);
-    const R = 1 / 6 + (lnWins + lnLosses) / 6;
+    const R = (1 / n) + (lnWins + lnLosses) / n;
     const total = W + R;
 
     // Dynamische Grenzen je nach Geschlecht!
