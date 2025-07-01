@@ -296,7 +296,7 @@ export default function SwissTennisRanking() {
 
     // Dynamische Grenzen je nach Geschlecht!
     // Beispiel: Nimm einen Array von [min, max] pro Klasse (je nach gender)
-    let classification = calcClassByCValue(gender, total);
+    let classification = calcClassByCValue(detected.gender, total);
 
     return {
       newWW: W.toFixed(3),
