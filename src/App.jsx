@@ -9,7 +9,6 @@ export default function SwissTennisRanking() {
   const [playerInfo, setPlayerInfo] = useState({});
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [gender, setGender] = useState(null);
 
   const infoLabels = [
     "Club",
@@ -84,9 +83,6 @@ export default function SwissTennisRanking() {
 		let detected = null;
 		if (info["Klassierung"]) {
 		  detected = detectGenderAndClassByRang(info["Klassierung"], ratingConfig);
-		  // detected.gender  // "male" oder "female" oder null
-		  // detected.klassierung // N4, R1, ...
-		  // detected.rang
 		}
       // StartWW setzen wenn im Import enthalten
       const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
@@ -239,7 +235,6 @@ export default function SwissTennisRanking() {
     setMatches([]);
     setPlayerName("");
     setPlayerInfo({});
-    setGender(null);
   };
 
   // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
@@ -341,10 +336,10 @@ export default function SwissTennisRanking() {
         </div>
       )}
 
-      {gender && (
+      {detected.gender && (
         <div style={{ textAlign: "center", marginBottom: 10 }}>
           <span style={{ color: "#888", fontSize: "1.02em" }}>
-            (Erkanntes Geschlecht: <b>{gender === "male" ? "Mann" : "Frau"}</b>)
+            (Erkanntes Geschlecht: <b>{detected.gender === "male" ? "Mann" : "Frau"}</b>)
           </span>
         </div>
       )}
