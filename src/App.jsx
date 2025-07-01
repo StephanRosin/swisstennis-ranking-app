@@ -294,11 +294,11 @@ export default function SwissTennisRanking() {
     }
 
     const expWins = wins.reduce(
-      (sum, m) => sum + Math.exp(parseFloat(m.ww || 0)),
+      (sum, m) => sum + Math.exp(parseFloat((m.ww*0.9) || 0)),
       0
     );
     const expLosses = losses.reduce(
-      (sum, m) => sum + Math.exp(-parseFloat(m.ww || 0)),
+      (sum, m) => sum + Math.exp(-parseFloat((m.ww*0.9) || 0)),
       0
     );
 
