@@ -395,66 +395,70 @@ export default function SwissTennisRanking() {
         </div>
       )}
 
-      {/* Neue Box im mytennis-Stil */}
-      <div
-        className="result-summary-box"
-        style={{
-          margin: "0 auto 1.6em auto",
-          maxWidth: 380,
-          background: "#fff",
-          border: "2px solid #e1e7ef",
-          borderRadius: "14px",
-          boxShadow: "0 3px 16px #0001",
-          padding: "28px 36px 22px 36px",
-          color: "#143986",
-          fontSize: "1.18em",
-          fontWeight: 500,
-          lineHeight: 1.6,
-          letterSpacing: 0,
-          textAlign: "center",
-        }}
-      >
-		<div>
-		<span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Neue Berechnung:</span>{" "}
-		 </div>
-		 <div>
-          <span style={{ color: "#123370", fontWeight: 700 }}>Wettkampfwert:</span>{" "}
-          <span style={{ color: "#555" }}>{result.newWW}</span>
-        </div>
-        <div>
-          <span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
-          <span style={{ color: "#555" }}>{result.risk}</span>
-        </div>
-        <div>
-          <span style={{ color: "#123370", fontWeight: 700 }}>Klassierungswert:</span>{" "}
-          <span style={{ color: "#555" }}>{result.total}</span>
-        </div>
-        <div>
-          <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
-          <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
-        </div>
-       </div>
+      {/* Box erscheint nur wenn Matches da sind */}
+		{matches.length > 0 && (
+		  <div
+			className="result-summary-box"
+			style={{
+			  margin: "0 auto 1.6em auto",
+			  maxWidth: 380,
+			  background: "#fff",
+			  border: "2px solid #e1e7ef",
+			  borderRadius: "14px",
+			  boxShadow: "0 3px 16px #0001",
+			  padding: "28px 36px 22px 36px",
+			  color: "#143986",
+			  fontSize: "1.18em",
+			  fontWeight: 500,
+			  lineHeight: 1.6,
+			  letterSpacing: 0,
+			  textAlign: "center",
+			}}
+		  >
+			<div>
+			  <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Neue Berechnung:</span>{" "}
+			</div>
+			<div>
+			  <span style={{ color: "#123370", fontWeight: 700 }}>Wettkampfwert:</span>{" "}
+			  <span style={{ color: "#555" }}>{result.newWW}</span>
+			</div>
+			<div>
+			  <span style={{ color: "#123370", fontWeight: 700 }}>Risikozuschlag:</span>{" "}
+			  <span style={{ color: "#555" }}>{result.risk}</span>
+			</div>
+			<div>
+			  <span style={{ color: "#123370", fontWeight: 700 }}>Klassierungswert:</span>{" "}
+			  <span style={{ color: "#555" }}>{result.total}</span>
+			</div>
+			<div>
+			  <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
+			  <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
+			</div>
+		  </div>
+		)}
 
-      {/* BUTTONS */}
-      <div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>
-        <button
-          type="button"
-          onClick={() => setShowImport(!showImport)}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
-        </button>
-        {matches.length > 0 && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-            style={{ marginLeft: 14 }}
-          >
-            Alle Daten löschen
-          </button>
-        )}
-      </div>
+		{/* BUTTONS */}
+		<div className="btn-row" style={{ marginBottom: 18, textAlign: "center" }}>
+		  {matches.length === 0 && (
+			<button
+			  type="button"
+			  onClick={() => setShowImport(!showImport)}
+			  className="bg-blue-500 text-white px-4 py-2 rounded"
+			>
+			  {showImport ? "Import-Feld zuklappen" : "Import-Feld öffnen"}
+			</button>
+		  )}
+		  {matches.length > 0 && (
+			<button
+			  type="button"
+			  onClick={clearAll}
+			  className="bg-red-600 text-white px-4 py-2 rounded"
+			>
+			  Alle Daten löschen
+			</button>
+		  )}
+		</div>
+
 
       {matches.length > 0 && (
         <div>
