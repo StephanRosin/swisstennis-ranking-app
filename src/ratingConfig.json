@@ -12,6 +12,5 @@
     { "value": -9999, "label": "R9 oder tiefer" }
   ],
   "decayBase": 0.82,
-  "decayFactor": 0.0075,
-  "decayMax": 24
+  "decayMax": 36
 }

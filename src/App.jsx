@@ -268,11 +268,14 @@ export default function SwissTennisRanking() {
       .filter((m) => m.result === "N" || (m.result === "Z" && m.score));
 
     const numGames = wins.length + losses.length;
+	const decayFactor = (1 - ratingConfig.decayBase) / ratingConfig.decayMax;
+
 	const decay = Math.min(
-  1,
-  ratingConfig.decayBase +
-    ratingConfig.decayFactor * Math.min(numGames, ratingConfig.decayMax)
-);
+	  1,
+	  ratingConfig.decayBase +
+		decayFactor * Math.min(numGames, ratingConfig.decayMax)
+	);
+
     const decayedWW = startWW * decay;
 
     const numStreich = Math.min(4, Math.floor(numGames / 6));
