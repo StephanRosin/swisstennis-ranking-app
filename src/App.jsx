@@ -307,7 +307,7 @@ export default function SwissTennisRanking() {
     const lnLosses = Math.log(expLosses + expW0_neg);
 
     const W = 0.5 * (lnWins - lnLosses);
-    const R = (1 / n) + (lnWins + lnLosses) / n;
+    const R = (1 / 6) * (lnWins + lnLosses);
     const total = W + R;
 
     // Dynamische Grenzen je nach Geschlecht!
