@@ -660,7 +660,7 @@ const parseInput = () => {
                       <td className="border px-2 text-center">
 						  {m.ww}
 						  {m.klassierungGegner && (
-							<> ({m.klassierungGegner})</>
+							<> - {m.klassierungGegner}</>
 						  )}
 						</td>
                       <td className="border px-2 text-center">
