@@ -85,211 +85,195 @@ export default function SwissTennisRanking() {
 	  // Wenn kleiner als alle Schwellen -> R9
 	  return "R9 oder tiefer";
 	}
+const parseInput = () => {
+  try {
+    const cleanText = inputText.replace(/[\u2028\u2029\u200B\u00A0]/g, "\n");
+    const lines = cleanText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
 
-  const parseInput = () => {
-    try {
-      const cleanText = inputText.replace(/[\u2028\u2029\u200B\u00A0]/g, "\n");
-      const lines = cleanText
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0);
-
-			 // Robuster: Name suchen (erste Zeile mit mind. 2 Wörtern, gefolgt von Lizenznummer in () in nächster Zeile)
-		let foundName = null;
-		for (let j = 0; j < lines.length - 1; j++) {
-		  // Zeilen überspringen, die nichts mit Name zu tun haben
-		  if (
-			lines[j].toLowerCase().includes("favoriten auswählen") ||
-			lines[j].toLowerCase().includes("alle favoriten")
-		  ) continue;
-
-		  // mind. 2 Wörter, mind. 6 Zeichen (keine Zahl am Anfang), nur Buchstaben, evtl. Bindestrich/Apostroph
-		  if (
-			/^[A-Za-zÄÖÜäöüß\-'. ]{6,}$/.test(lines[j]) &&
-			lines[j].split(" ").length >= 2 &&
-			/^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.[0-9]\)$/.test(lines[j + 1])
-		  ) {
-			foundName = `${lines[j]} ${lines[j + 1]}`;
-			break;
-		  }
-		}
-		if (foundName) setPlayerName(foundName);
-
-
-      // Spielerinfos extrahieren
-      const info = {};
-      lines.forEach((line, i) => {
-        infoLabels.forEach(label => {
-          if (line.startsWith(label)) {
-            let val = line.replace(label, "").replace(/^[:\s]*/, "");
-            if (!val && lines[i + 1]) val = lines[i + 1].trim();
-            // Für Klassierung: nur nehmen, wenn es wie ein Klassierungswert aussieht
-            if (label === "Klassierung") {
-              if (/^(R\d|N\d)(\s*\(\d+\))?$/.test(val)) {
-                info[label] = val;
-              }
-            } else {
-              info[label] = val;
-            }
-          }
-        });
-      });
-
-        if (Object.keys(info).length > 0) setPlayerInfo(info);
-		let detected = null;
-		if (info["Klassierung"]) {
-		  detected = detectGenderAndClassByRang(info["Klassierung"], ratingConfig);
-		  console.log('Klassierung:', info["Klassierung"]);
-		  console.log('detected:', detected);
-		  if (detected && detected.gender) setGender(detected.gender);
-		}
-
-      // StartWW setzen wenn im Import enthalten
-      const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
+    // Robuster: Name suchen (erste Zeile mit mind. 2 Wörtern, gefolgt von Lizenznummer in () in nächster Zeile)
+    let foundName = null;
+    for (let j = 0; j < lines.length - 1; j++) {
       if (
-        wwi !== -1 &&
-        wwi + 1 < lines.length &&
-        /^[\d\.,]+$/.test(lines[wwi + 1])
+        lines[j].toLowerCase().includes("favoriten auswählen") ||
+        lines[j].toLowerCase().includes("alle favoriten")
+      ) continue;
+
+      if (
+        /^[A-Za-zÄÖÜäöüß\-'. ]{6,}$/.test(lines[j]) &&
+        lines[j].split(" ").length >= 2 &&
+        /^\([0-9]{3}\.[0-9]{2}\.[0-9]{3}\.[0-9]\)$/.test(lines[j + 1])
       ) {
-        let wwExtracted = lines[wwi + 1].replace(",", ".");
-        setStartWW(parseFloat(wwExtracted));
+        foundName = `${lines[j]} ${lines[j + 1]}`;
+        break;
       }
-
-      // Matches extrahieren (unverändert)
-      const parsed = [];
-      let i = 0;
-      while (i < lines.length) {
-        if (
-          (lines[i].toUpperCase() === "DATUM") &&
-          i + 1 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i + 1])
-        ) {
-          let block = {};
-          let j = i;
-          let step = 0;
-          while (
-            j < lines.length &&
-            (!["DATUM", "Datum"].includes(lines[j]) || j === i)
-          ) {
-            const label = lines[j].toUpperCase();
-            const value = lines[j + 1];
-            if (label === "NAME DES GEGNERS" && value) block.name = value;
-            if (
-              (label === "WETTK. WERT 4.L." ||
-                label === "WETTKAMPFWERT 4.L." ||
-                label === "WETTKAMPFWERT" ||
-                label === "WW GEGNER" ||
-                label === "WW") &&
-              value &&
-              /^[\d\.,]+$/.test(value.replace(",", "."))
-            ) {
-              block.ww = value.replace(",", ".");
-            }
-            if (label === "CODE" && value) block.result = value;
-            if ((label === "RESULTAT" || label === "RESULTATE") && value)
-              block.score = value;
-            j += 2;
-            step++;
-            if (step > 12) break;
-          }
-          if (
-            block.name &&
-            (block.result === "S" || block.result === "N" || block.result === "W" || block.result === "Z")
-          ) {
-            parsed.push({
-              name: block.name,
-              ww: block.ww || "",
-              result: block.result,
-              score: block.score || "",
-              isWalkover: block.result === "W" || block.result === "Z",
-            });
-          }
-          i = j;
-          continue;
-        }
-        if (
-          i + 5 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
-          /^[\d\.,]+$/.test(lines[i + 2].replace(",", ".")) &&
-          /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
-          ["S", "N", "W", "Z"].includes(lines[i + 5])
-        ) {
-          parsed.push({
-            name: lines[i + 1],
-            ww: lines[i + 2].replace(",", "."),
-            result: lines[i + 5],
-            score: lines[i + 4],
-            isWalkover: lines[i + 5] === "W" || lines[i + 5] === "Z",
-          });
-          i += 6;
-          continue;
-        }
-        if (
-          i + 6 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
-          /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
-          /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 5]) &&
-          ["S", "N", "W", "Z"].includes(lines[i + 6])
-        ) {
-          parsed.push({
-            name: lines[i + 2],
-            ww: lines[i + 3].replace(",", "."),
-            result: lines[i + 6],
-            score: lines[i + 5],
-            isWalkover: lines[i + 6] === "W" || lines[i + 6] === "Z",
-          });
-          i += 7;
-          continue;
-        }
-        if (
-          i + 7 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
-          /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
-          ["S", "N", "W", "Z"].includes(lines[i + 7])
-        ) {
-          parsed.push({
-            name: lines[i + 3],
-            ww: lines[i + 4].replace(",", "."),
-            result: lines[i + 7],
-            score: lines[i + 5],
-            isWalkover: lines[i + 7] === "W" || lines[i + 7] === "Z",
-          });
-          i += 8;
-          continue;
-        }
-        if (
-          i + 6 < lines.length &&
-          /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
-          /^[\d\.,]+$/.test(lines[i + 3].replace(",", ".")) &&
-          ["S", "N", "W", "Z"].includes(lines[i + 6])
-        ) {
-          parsed.push({
-            name: lines[i + 2],
-            ww: lines[i + 3].replace(",", "."),
-            result: lines[i + 6],
-            score: lines[i + 4],
-            isWalkover: lines[i + 6] === "W" || lines[i + 6] === "Z",
-          });
-          i += 7;
-          continue;
-        }
-        i++;
-      }
-
-      if (parsed.length === 0) {
-        setErrorMessage(
-          "Keine gültigen Resultate gefunden. Bitte stelle sicher, dass du das komplette Textfeld von MyTennis kopierst."
-        );
-        return;
-      }
-      setMatches((prev) => [...prev, ...parsed]);
-      setInputText("");
-      setShowImport(false);
-      setErrorMessage("");
-    } catch (error) {
-      setErrorMessage("Fehler beim Parsen: " + error.message);
     }
-  };
+    if (foundName) setPlayerName(foundName);
+
+    // Spielerinfos extrahieren
+    const info = {};
+    infoLabels.forEach(label => {
+      const idx = lines.findIndex(line => line.startsWith(label));
+      if (idx !== -1) {
+        let val = lines[idx].replace(label, "").replace(/^[:\s]*/, "");
+        if (!val && lines[idx + 1]) val = lines[idx + 1].trim();
+        if (label === "Klassierung") {
+          if (/^(R\d|N\d)(\s*\(\d+\))?$/.test(val)) {
+            info[label] = val;
+          }
+        } else {
+          info[label] = val;
+        }
+      }
+    });
+    if (Object.keys(info).length > 0) setPlayerInfo(info);
+
+    let detected = null;
+    if (info["Klassierung"]) {
+      detected = detectGenderAndClassByRang(info["Klassierung"], ratingConfig);
+      if (detected && detected.gender) setGender(detected.gender);
+    }
+
+    // StartWW setzen wenn im Import enthalten
+    const wwi = lines.findIndex(l => /^Wettkampfwert$/i.test(l));
+    if (
+      wwi !== -1 &&
+      wwi + 1 < lines.length &&
+      /^[\d\.,]+$/.test(lines[wwi + 1])
+    ) {
+      let wwExtracted = lines[wwi + 1].replace(",", ".");
+      setStartWW(parseFloat(wwExtracted));
+    }
+
+    // Matches extrahieren (mit Klassierung des Gegners)
+    const parsed = [];
+    let i = 0;
+    while (i < lines.length) {
+      //  IC-Tabellenblock 7 Zeilen: Datum, Runde, Liga, Name, WW, Klassierung, Score, Code
+      if (
+        i + 6 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
+        /^[RN]\d/.test(lines[i + 5]) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 6]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 7])
+      ) {
+        parsed.push({
+          name: lines[i + 3],
+          ww: lines[i + 4].replace(",", "."),
+          klassierungGegner: lines[i + 5],
+          score: lines[i + 6],
+          result: lines[i + 7],
+          isWalkover: lines[i + 7] === "W" || lines[i + 7] === "Z",
+        });
+        i += 8;
+        continue;
+      }
+
+      // 6-Zeiler: Datum, Name, WW, Klassierung, Score, Code
+      if (
+        i + 5 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 2].replace(",", ".")) &&
+        /^[RN]\d/.test(lines[i + 3]) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 5])
+      ) {
+        parsed.push({
+          name: lines[i + 1],
+          ww: lines[i + 2].replace(",", "."),
+          klassierungGegner: lines[i + 3],
+          score: lines[i + 4],
+          result: lines[i + 5],
+          isWalkover: lines[i + 5] === "W" || lines[i + 5] === "Z",
+        });
+        i += 6;
+        continue;
+      }
+
+      // 7-Zeiler: Datum, Name, WW, Klassierung, Score, Code (Variante)
+      if (
+        i + 6 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 2].replace(",", ".")) &&
+        /^[RN]\d/.test(lines[i + 3]) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 6])
+      ) {
+        parsed.push({
+          name: lines[i + 1],
+          ww: lines[i + 2].replace(",", "."),
+          klassierungGegner: lines[i + 3],
+          score: lines[i + 4],
+          result: lines[i + 6],
+          isWalkover: lines[i + 6] === "W" || lines[i + 6] === "Z",
+        });
+        i += 7;
+        continue;
+      }
+
+      // Ältere 7/8-Zeiler mit Score vor Klassierung
+      if (
+        i + 7 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 4].replace(",", ".")) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 5]) &&
+        /^[RN]\d/.test(lines[i + 6]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 7])
+      ) {
+        parsed.push({
+          name: lines[i + 3],
+          ww: lines[i + 4].replace(",", "."),
+          score: lines[i + 5],
+          klassierungGegner: lines[i + 6],
+          result: lines[i + 7],
+          isWalkover: lines[i + 7] === "W" || lines[i + 7] === "Z",
+        });
+        i += 8;
+        continue;
+      }
+
+      // Generischer Fallback: Datum, Name, WW, [evtl. Klassierung], Score, Code
+      if (
+        i + 5 < lines.length &&
+        /^\d{2}\.\d{2}\.\d{4}$/.test(lines[i]) &&
+        /^[\d\.,]+$/.test(lines[i + 2].replace(",", ".")) &&
+        /^([0-9]+[:\-][0-9]+.*|[0-9]+:[0-9]+.*)$/.test(lines[i + 4]) &&
+        ["S", "N", "W", "Z"].includes(lines[i + 5])
+      ) {
+        let klassierung = "";
+        if (lines[i + 3] && /^[RN]\d/.test(lines[i + 3])) klassierung = lines[i + 3];
+        parsed.push({
+          name: lines[i + 1],
+          ww: lines[i + 2].replace(",", "."),
+          klassierungGegner: klassierung,
+          score: lines[i + 4],
+          result: lines[i + 5],
+          isWalkover: lines[i + 5] === "W" || lines[i + 5] === "Z",
+        });
+        i += 6;
+        continue;
+      }
+
+      i++;
+    }
+
+    if (parsed.length === 0) {
+      setErrorMessage(
+        "Keine gültigen Resultate gefunden. Bitte stelle sicher, dass du das komplette Textfeld von MyTennis kopierst."
+      );
+      return;
+    }
+    setMatches((prev) => [...prev, ...parsed]);
+    setInputText("");
+    setShowImport(false);
+    setErrorMessage("");
+  } catch (error) {
+    setErrorMessage("Fehler beim Parsen: " + error.message);
+  }
+};
 
   const clearAll = () => {
     setMatches([]);
@@ -673,7 +657,12 @@ export default function SwissTennisRanking() {
                       }
                     >
                       <td className="border px-2 text-center">{m.name}</td>
-                      <td className="border px-2 text-center">{m.ww}</td>
+                      <td className="border px-2 text-center">
+						  {m.ww}
+						  {m.klassierungGegner && (
+							<> ({m.klassierungGegner})</>
+						  )}
+						</td>
                       <td className="border px-2 text-center">
                         <span
                           className={
