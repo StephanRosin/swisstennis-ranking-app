@@ -500,23 +500,42 @@ export default function SwissTennisRanking() {
           <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
           <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
         </div>
-		{classBoundaries && (
-		  <div style={{marginTop: 16, fontSize: "0.98em", color: "#666"}}>
-			{classBoundaries.higher && (
-			  <div>
-				<b>Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):</b> {classBoundaries.higher.minWert.toFixed(3)} {(distanceToHigher > 0 ? "+" : "") + distanceToHigher}
+			{classBoundaries && (
+			  <div style={{ marginTop: 16, fontSize: "0.98em", color: "#666" }}>
+				{classBoundaries.higher && typeof distanceToHigher === "number" && (
+				  <div>
+					<b>
+					  Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):
+					</b>{" "}
+					{classBoundaries.higher.minWert.toFixed(3)}
+					<span style={{ color: "#00822b", marginLeft: 4 }}>
+					  (
+					  {distanceToHigher > 0 ? "+" : ""}
+					  {distanceToHigher.toFixed(3)}
+					  )
+					</span>
+				  </div>
+				)}
+				<div>
+				  <b>Dein Wert:</b> {result.total}
+				</div>
+				{classBoundaries.lower && typeof distanceToLower === "number" && (
+				  <div>
+					<b>
+					  Grenze zur tieferen Klasse ({classBoundaries.lower.klasse}):
+					</b>{" "}
+					{classBoundaries.lower.minWert.toFixed(3)}
+					<span style={{ color: "#e3342f", marginLeft: 4 }}>
+					  (
+					  {distanceToLower > 0 ? "-" : ""}
+					  {distanceToLower.toFixed(3)}
+					  )
+					</span>
+				  </div>
+				)}
 			  </div>
 			)}
-			<div>
-			  <b>Dein Wert:</b> {result.total}
-			</div>
-			{classBoundaries.lower && (
-			  <div>
-				<b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)} {(distanceToLower > 0 ? "-" : "") + distanceToLower}
-			  </div>
-			)}
-		  </div>
-		)}
+
       </div>
       )}
 
