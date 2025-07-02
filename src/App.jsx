@@ -551,9 +551,9 @@ export default function SwissTennisRanking() {
             100,
             Math.max(
               0,
-              ((result.total - classBoundaries.current.minWert) /
-                (classBoundaries.higher.minWert - classBoundaries.current.minWert)) *
-                100
+             ((result.total - classBoundaries.current.minWert) /
+              (classBoundaries.higher.minWert)) *
+            100
             )
           )}%`,
           background:
