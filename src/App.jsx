@@ -519,7 +519,8 @@ export default function SwissTennisRanking() {
 			</div>
 			{classBoundaries.lower && (
 			  <div>
-				<span><b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)} ({(distanceToLower > 0 ? "-" : "") + distanceToLower})</span>
+				<span><b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)} {getNextLowerClassName(gender, classBoundaries.current.klasse) ||
+          classBoundaries.current.klasse}</span>
 			  </div>
 			)}
 		  </div>
