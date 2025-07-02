@@ -506,7 +506,7 @@ export default function SwissTennisRanking() {
 			  <div>
 				<b>Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):</b> {classBoundaries.higher.minWert.toFixed(3)}
 				  {distanceToHigher !== null && (
-					<span style={{color: "#00822b"}}> ({distanceToHigher > 0 ? "+" : ""}{distanceToHigher})</span>
+					 ({distanceToHigher > 0 ? "+" : ""}{distanceToHigher})
 				  )}
 			  </div>
 			)}
@@ -517,7 +517,7 @@ export default function SwissTennisRanking() {
 			  <div>
 				<b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)}
 				  {distanceToLower !== null && (
-					<span style={{color: "#e3342f"}}> ({distanceToLower > 0 ? "+" : ""}{distanceToLower})</span>
+					({distanceToLower > 0 ? "-" : ""}{distanceToLower})
 				  )}
 			  </div>
 			)}
