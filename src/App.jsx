@@ -517,6 +517,102 @@ export default function SwissTennisRanking() {
 			)}
 		  </div>
 		)}
+		{classBoundaries && classBoundaries.higher && classBoundaries.lower && (
+  <div style={{ margin: "20px 0", maxWidth: 320 }}>
+    <div style={{ fontSize: "0.95em", color: "#444", marginBottom: 6 }}>
+      Abstand zu Grenzen
+    </div>
+    <div
+      style={{
+        position: "relative",
+        background: "#e9e9ef",
+        borderRadius: 8,
+        height: 22,
+        width: "100%",
+        boxShadow: "0 1px 4px #0001"
+      }}
+    >
+      {/* Progress-Füllung */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          height: "100%",
+          borderRadius: 8,
+          width: `${Math.min(
+            100,
+            Math.max(
+              0,
+              ((result.total - classBoundaries.lower.minWert) /
+                (classBoundaries.higher.minWert - classBoundaries.lower.minWert)) *
+                100
+            )
+          )}%`,
+          background:
+            "linear-gradient(90deg, #e3342f 0%, #fbbc05 50%, #00822b 100%)",
+          transition: "width 0.5s cubic-bezier(.5,.2,.2,1)"
+        }}
+      />
+      {/* Labels */}
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          fontSize: 13,
+          color: "#e3342f",
+          fontWeight: 600,
+          paddingLeft: 2,
+          lineHeight: "22px"
+        }}
+      >
+        {classBoundaries.lower.minWert.toFixed(2)}
+      </span>
+      <span
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          fontSize: 13,
+          color: "#00822b",
+          fontWeight: 600,
+          paddingRight: 2,
+          lineHeight: "22px"
+        }}
+      >
+        {classBoundaries.higher.minWert.toFixed(2)}
+      </span>
+      {/* Marker für den aktuellen Wert */}
+      <span
+        style={{
+          position: "absolute",
+          left: `${
+            ((result.total - classBoundaries.lower.minWert) /
+              (classBoundaries.higher.minWert - classBoundaries.lower.minWert)) *
+            100
+          }%`,
+          top: 0,
+          transform: "translate(-50%, 0)",
+          fontSize: 14,
+          fontWeight: 700,
+          color: "#143986",
+          background: "#fff",
+          borderRadius: 5,
+          padding: "0 6px",
+          boxShadow: "0 1px 5px #0002",
+          lineHeight: "22px"
+        }}
+      >
+        {parseFloat(result.total).toFixed(2)}
+      </span>
+    </div>
+    <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
+      Links = Grenze zum Abstieg | Rechts = Grenze zur höheren Klasse
+    </div>
+  </div>
+)}
+
       </div>
       )}
 
