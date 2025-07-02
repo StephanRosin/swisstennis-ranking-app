@@ -534,6 +534,7 @@ export default function SwissTennisRanking() {
         position: "relative",
         background: "#e9e9ef",
         borderRadius: 8,
+		marginLeft: 20,
         height: 22,
         width: "90%",
         boxShadow: "0 1px 4px #0001"
