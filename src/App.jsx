@@ -517,10 +517,10 @@ export default function SwissTennisRanking() {
 			)}
 		  </div>
 		)}
-		{classBoundaries && classBoundaries.higher && classBoundaries.lower && (
+	{classBoundaries && classBoundaries.higher && classBoundaries.lower && (
   <div style={{ margin: "20px 0" }}>
     <div style={{ fontSize: "0.95em", color: "#444", marginBottom: 6 }}>
-      <b>Abstand zu Grenzen</b>
+      Abstand zu Grenzen
     </div>
     <div
       style={{
@@ -532,7 +532,7 @@ export default function SwissTennisRanking() {
         boxShadow: "0 1px 4px #0001"
       }}
     >
-      {/* Progress-Füllung */}
+      {/* Fortschritts-Balken */}
       <div
         style={{
           position: "absolute",
@@ -540,7 +540,6 @@ export default function SwissTennisRanking() {
           top: 0,
           height: "100%",
           borderRadius: 8,
-          // Prozentwert von höher (links) nach niedriger (rechts)
           width: `${Math.min(
             100,
             Math.max(
@@ -565,10 +564,15 @@ export default function SwissTennisRanking() {
           color: "#00822b",
           fontWeight: 600,
           paddingLeft: 2,
-          lineHeight: "22px"
+          lineHeight: "22px",
+          background: "#fff",
+          borderRadius: 5,
+          padding: "0 6px",
+          boxShadow: "0 1px 5px #0002",
+          zIndex: 2
         }}
       >
-        {classBoundaries.higher.minWert.toFixed(2)}
+        {classBoundaries.higher.minWert.toFixed(2)} ({classBoundaries.higher.klasse})
       </span>
       <span
         style={{
@@ -579,12 +583,17 @@ export default function SwissTennisRanking() {
           color: "#e3342f",
           fontWeight: 600,
           paddingRight: 2,
-          lineHeight: "22px"
+          lineHeight: "22px",
+          background: "#fff",
+          borderRadius: 5,
+          padding: "0 6px",
+          boxShadow: "0 1px 5px #0002",
+          zIndex: 2
         }}
       >
-        {classBoundaries.lower.minWert.toFixed(2)}
+        {classBoundaries.lower.minWert.toFixed(2)} ({classBoundaries.lower.klasse})
       </span>
-      {/* Marker für den aktuellen Wert */}
+      {/* Marker für aktuellen Wert */}
       <span
         style={{
           position: "absolute",
@@ -602,7 +611,8 @@ export default function SwissTennisRanking() {
           borderRadius: 5,
           padding: "0 6px",
           boxShadow: "0 1px 5px #0002",
-          lineHeight: "22px"
+          lineHeight: "22px",
+          zIndex: 3
         }}
       >
         {parseFloat(result.total).toFixed(2)}
