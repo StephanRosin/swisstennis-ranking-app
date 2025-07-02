@@ -610,8 +610,8 @@ export default function SwissTennisRanking() {
         style={{
           position: "absolute",
           right: `${
-            ((result.total - classBoundaries.current.minWert) /
-              (classBoundaries.higher.minWert - classBoundaries.current.minWert)) *
+            ((result.total - classBoundaries.current.maxWert) /
+              (classBoundaries.higher.maxWert - classBoundaries.current.maxWert)) *
             100
           }%`,
           top: 0,
