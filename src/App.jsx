@@ -609,7 +609,7 @@ export default function SwissTennisRanking() {
       <span
         style={{
           position: "absolute",
-          left: `${
+          right: `${
             ((result.total - classBoundaries.current.minWert) /
               (classBoundaries.higher.minWert - classBoundaries.current.minWert)) *
             100
