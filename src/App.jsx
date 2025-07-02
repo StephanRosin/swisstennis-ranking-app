@@ -566,7 +566,7 @@ export default function SwissTennisRanking() {
       <span
         style={{
           position: "absolute",
-          left: 0,
+          left: -20,
           top: 0,
           fontSize: 13,
           color: "#00822b",
@@ -586,7 +586,7 @@ export default function SwissTennisRanking() {
       <span
         style={{
           position: "absolute",
-          right: 0,
+          right: -20,
           top: 0,
           fontSize: 13,
           color: "#e3342f",
