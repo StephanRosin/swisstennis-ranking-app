@@ -25,6 +25,38 @@ export default function SwissTennisRanking() {
     "Letzte Klassierung",
     "Beste Klassierung seit 2004",
   ];
+	function getClassBoundaries(gender, value, ratingConfig) {
+	  const boundaries = ratingConfig.classBoundaries[gender];
+	  if (!boundaries) return null;
+
+	  // Sortiere nach Wert DESC (höchste zuerst)
+	  const entries = Object.entries(boundaries).sort((a, b) => b[1] - a[1]);
+
+	  let prevClass = null;
+	  let nextClass = null;
+	  let found = false;
+
+	  for (let i = 0; i < entries.length; i++) {
+		const [klasse, minWert] = entries[i];
+		if (value >= minWert && !found) {
+		  prevClass = entries[i - 1] || null;
+		  nextClass = entries[i + 1] || null;
+		  found = true;
+		  return {
+			current: { klasse, minWert },
+			higher: prevClass ? { klasse: prevClass[0], minWert: prevClass[1] } : null,
+			lower: nextClass ? { klasse: nextClass[0], minWert: nextClass[1] } : null
+		  };
+		}
+	  }
+	  // Wenn keine Grenze gefunden (zu tief) => unterste Klasse
+	  const last = entries[entries.length - 1];
+	  return {
+		current: { klasse: last[0], minWert: last[1] },
+		higher: entries[entries.length - 2] ? { klasse: entries[entries.length - 2][0], minWert: entries[entries.length - 2][1] } : null,
+		lower: null
+	  };
+	}
 
   function estimateDecay(numSpiele) {
   const base = ratingConfig.decayBase || 0.82;
@@ -330,6 +362,7 @@ export default function SwissTennisRanking() {
   };
 
   const result = calculate();
+  const classBoundaries = getClassBoundaries(gender, parseFloat(result.total), ratingConfig);
 
   return (
     <div className="app-bg" style={{ minHeight: "100vh", background: "#f5f6f8", paddingBottom: 60 }}>
@@ -456,6 +489,23 @@ export default function SwissTennisRanking() {
           <span style={{ fontSize: "1.13em", color: "#123370", fontWeight: 700 }}>Klassierung:</span>{" "}
           <span style={{ fontSize: "1.13em", color: "#00822b" }}>{result.classification}</span>
         </div>
+		{classBoundaries && (
+		  <div style={{marginTop: 16, fontSize: "0.98em", color: "#666"}}>
+			{classBoundaries.higher && (
+			  <div>
+				<b>Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):</b> {classBoundaries.higher.minWert.toFixed(3)}
+			  </div>
+			)}
+			<div>
+			  <b>Dein Wert:</b> {result.total}
+			</div>
+			{classBoundaries.lower && (
+			  <div>
+				<b>Grenze zur tieferen Klasse ({classBoundaries.lower.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)}
+			  </div>
+			)}
+		  </div>
+		)}
       </div>
       )}
 
