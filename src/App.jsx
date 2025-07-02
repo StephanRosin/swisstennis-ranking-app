@@ -558,7 +558,7 @@ export default function SwissTennisRanking() {
             )
           )}%`,
           background:
-            "linear-gradient(90deg, #00822b 0%, #fbbc05 50%, #e3342f 100%)",
+            "#3490dc",
           transition: "width 0.5s cubic-bezier(.5,.2,.2,1)"
         }}
       />
