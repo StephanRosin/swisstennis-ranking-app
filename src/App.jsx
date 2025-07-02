@@ -363,6 +363,17 @@ export default function SwissTennisRanking() {
 
   const result = calculate();
   const classBoundaries = getClassBoundaries(gender, parseFloat(result.total), ratingConfig);
+	let distanceToHigher = null;
+	let distanceToLower = null;
+
+	if (classBoundaries) {
+	  if (classBoundaries.higher) {
+		distanceToHigher = (classBoundaries.higher.minWert - parseFloat(result.total)).toFixed(3);
+	  }
+	  if (classBoundaries.lower) {
+		distanceToLower = (parseFloat(result.total) - classBoundaries.current.minWert).toFixed(3);
+	  }
+	}
 
   return (
     <div className="app-bg" style={{ minHeight: "100vh", background: "#f5f6f8", paddingBottom: 60 }}>
@@ -494,6 +505,9 @@ export default function SwissTennisRanking() {
 			{classBoundaries.higher && (
 			  <div>
 				<b>Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):</b> {classBoundaries.higher.minWert.toFixed(3)}
+				  {distanceToHigher !== null && (
+					<span style={{color: "#00822b"}}> ({distanceToHigher > 0 ? "+" : ""}{distanceToHigher})</span>
+				  )}
 			  </div>
 			)}
 			<div>
@@ -501,7 +515,10 @@ export default function SwissTennisRanking() {
 			</div>
 			{classBoundaries.lower && (
 			  <div>
-				<b>Grenze zur tieferen Klasse ({classBoundaries.lower.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)}
+				<b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)}
+				  {distanceToLower !== null && (
+					<span style={{color: "#e3342f"}}> ({distanceToLower > 0 ? "+" : ""}{distanceToLower})</span>
+				  )}
 			  </div>
 			)}
 		  </div>
