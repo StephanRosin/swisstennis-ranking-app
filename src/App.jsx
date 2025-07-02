@@ -673,7 +673,12 @@ export default function SwissTennisRanking() {
                       }
                     >
                       <td className="border px-2 text-center">{m.name}</td>
-                      <td className="border px-2 text-center">{m.ww}</td>
+                      <td className="border px-2 text-center">
+						  {m.ww}
+						  {m.ww && !isNaN(parseFloat(m.ww)) && (
+							<> ({calcClassByCValue(gender, parseFloat(m.ww))})</>
+						  )}
+						</td>
                       <td className="border px-2 text-center">
                         <span
                           className={
