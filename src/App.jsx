@@ -551,9 +551,9 @@ export default function SwissTennisRanking() {
             100,
             Math.max(
               0,
-             ((result.total - classBoundaries.current.minWert) /
-              (classBoundaries.higher.minWert)) *
-            100
+              ((result.total - classBoundaries.current.minWert) /
+                (classBoundaries.higher.minWert - classBoundaries.current.minWert)) *
+                100
             )
           )}%`,
           background:
@@ -604,30 +604,6 @@ export default function SwissTennisRanking() {
         {getNextLowerClassName(gender, classBoundaries.current.klasse) ||
           classBoundaries.current.klasse}
         )
-      </span>
-      {/* Marker für aktuellen Wert */}
-      <span
-        style={{
-          position: "absolute",
-          left: `${
-            ((result.total - classBoundaries.current.minWert) /
-              (classBoundaries.higher.minWert)) *
-            100
-          }%`,
-          top: 0,
-          transform: "translate(-50%, 0)",
-          fontSize: 14,
-          fontWeight: 700,
-          color: "#143986",
-          background: "#fff",
-          borderRadius: 5,
-          padding: "0 6px",
-          boxShadow: "0 1px 5px #0002",
-          lineHeight: "22px",
-          zIndex: 3
-        }}
-      >
-        {parseFloat(result.total).toFixed(3)}
       </span>
     </div>
     <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
