@@ -504,10 +504,7 @@ export default function SwissTennisRanking() {
 		  <div style={{marginTop: 16, fontSize: "0.98em", color: "#666"}}>
 			{classBoundaries.higher && (
 			  <div>
-				<b>Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):</b> {classBoundaries.higher.minWert.toFixed(3)}
-				  {distanceToHigher !== null && (
-					({distanceToHigher > 0 ? "+" : ""}{distanceToHigher})
-				  )}
+				<b>Grenze zur höheren Klasse ({classBoundaries.higher.klasse}):</b> {classBoundaries.higher.minWert.toFixed(3)} {(distanceToHigher > 0 ? "+" : "") + distanceToHigher}
 			  </div>
 			)}
 			<div>
@@ -515,10 +512,7 @@ export default function SwissTennisRanking() {
 			</div>
 			{classBoundaries.lower && (
 			  <div>
-				<b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)}
-				  {distanceToLower !== null && (
-					({distanceToLower > 0 ? "+" : ""}{distanceToLower})
-				  )}
+				<b>Grenze zur tieferen Klasse ({classBoundaries.current.klasse}):</b> {classBoundaries.current.minWert.toFixed(3)} {(distanceToLower > 0 ? "-" : "") + distanceToLower}
 			  </div>
 			)}
 		  </div>
