@@ -31,6 +31,9 @@ export default function SwissTennisRanking() {
 	  if (idx === -1 || idx === boundaries.length - 1) return null; // keine tiefere Klasse
 	  return boundaries[idx + 1];
 	}
+	const lowerClassName =
+	  getNextLowerClassName(gender, classBoundaries.current.klasse) ||
+	  classBoundaries.current.klasse;
 
 	function getClassBoundaries(gender, value, ratingConfig) {
 	  const boundaries = ratingConfig.classBoundaries[gender];
