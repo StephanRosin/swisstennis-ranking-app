@@ -517,10 +517,10 @@ export default function SwissTennisRanking() {
 			)}
 		  </div>
 		)}
-	{classBoundaries && classBoundaries.higher && classBoundaries.lower && (
+	{classBoundaries && classBoundaries.higher && classBoundaries.current && (
   <div style={{ margin: "20px 0" }}>
     <div style={{ fontSize: "0.95em", color: "#444", marginBottom: 6 }}>
-      Abstand zu Grenzen
+      <b>Abstand zu Grenzen</b>
     </div>
     <div
       style={{
@@ -545,7 +545,7 @@ export default function SwissTennisRanking() {
             Math.max(
               0,
               ((classBoundaries.higher.minWert - result.total) /
-                (classBoundaries.higher.minWert - classBoundaries.lower.minWert)) *
+                (classBoundaries.higher.minWert - classBoundaries.current.minWert)) *
                 100
             )
           )}%`,
@@ -555,6 +555,7 @@ export default function SwissTennisRanking() {
         }}
       />
       {/* Labels */}
+      {/* Höhere Klasse */}
       <span
         style={{
           position: "absolute",
@@ -572,8 +573,9 @@ export default function SwissTennisRanking() {
           zIndex: 2
         }}
       >
-        {classBoundaries.higher.minWert.toFixed(2)} ({classBoundaries.higher.klasse})
+        {classBoundaries.higher.minWert.toFixed(3)} ({classBoundaries.higher.klasse})
       </span>
+      {/* Aktuelle Klasse als untere Grenze */}
       <span
         style={{
           position: "absolute",
@@ -591,7 +593,7 @@ export default function SwissTennisRanking() {
           zIndex: 2
         }}
       >
-        {classBoundaries.lower.minWert.toFixed(2)} ({classBoundaries.lower.klasse})
+        {classBoundaries.current.minWert.toFixed(3)} ({classBoundaries.current.klasse})
       </span>
       {/* Marker für aktuellen Wert */}
       <span
@@ -599,7 +601,7 @@ export default function SwissTennisRanking() {
           position: "absolute",
           left: `${
             ((classBoundaries.higher.minWert - result.total) /
-              (classBoundaries.higher.minWert - classBoundaries.lower.minWert)) *
+              (classBoundaries.higher.minWert - classBoundaries.current.minWert)) *
             100
           }%`,
           top: 0,
@@ -615,11 +617,11 @@ export default function SwissTennisRanking() {
           zIndex: 3
         }}
       >
-        {parseFloat(result.total).toFixed(2)}
+        {parseFloat(result.total).toFixed(3)}
       </span>
     </div>
     <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
-      Links = Grenze zur höheren Klasse | Rechts = Grenze zur tieferen Klasse
+      Links = Grenze zur höheren Klasse | Rechts = Grenze zur aktuellen Klasse
     </div>
   </div>
 )}
