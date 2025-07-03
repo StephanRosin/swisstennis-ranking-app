@@ -425,14 +425,6 @@ export default function SwissTennisRanking() {
         </div>
       )}
 
-      {gender && (
-        <div style={{ textAlign: "center", marginBottom: 10 }}>
-          <span style={{ color: "#888", fontSize: "1.02em" }}>
-            (Erkanntes Geschlecht: <b>{gender === "male" ? "Mann" : "Frau"}</b>)
-          </span>
-        </div>
-      )}
-
       {playerInfo && Object.keys(playerInfo).length > 0 && (
         <div
           className="player-info-table"
