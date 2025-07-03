@@ -33,21 +33,21 @@ export default function SwissTennisRanking() {
 	}
 	function getMonthlyMultiplier(month) {
 	  // month: 1=Januar, ..., 12=Dezember
-	  // April–September (4–9): Start 0.9 → 1.0, linear, 6 Schritte
-	  // Oktober–März (10–3): Start 0.9 → 1.0, linear, 6 Schritte
-
+	  // April–September: [0.92, 0.93, 0.94, 0.95, 0.96, 0.98]
 	  if (month >= 4 && month <= 9) {
-		// April = 0, Mai = 1, ..., September = 5
-		return +(0.9 + ((month - 4) * (1.0 - 0.9) / 5)).toFixed(3);
+		let steps = [0.92, 0.93, 0.94, 0.95, 0.96, 0.98];
+		return steps[month - 4];
 	  }
-	  // Okt (10), Nov (11), Dez (12), Jan (1), Feb (2), Mär (3)
+	  // Oktober–März: [0.92, 0.93, 0.94, 0.95, 0.96, 0.98]
 	  let cycleOrder = [10, 11, 12, 1, 2, 3];
+	  let steps = [0.92, 0.93, 0.94, 0.95, 0.96, 0.98];
 	  let i = cycleOrder.indexOf(month);
 	  if (i !== -1) {
-		return +(0.9 + (i * (1.0 - 0.9) / 5)).toFixed(3);
+		return steps[i];
 	  }
-	  return 1.0; // fallback
+	  return 0.98; // fallback
 	}
+
 
 
 	function getClassBoundaries(gender, value, ratingConfig) {
