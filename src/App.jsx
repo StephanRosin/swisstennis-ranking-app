@@ -31,44 +31,24 @@ export default function SwissTennisRanking() {
 	  if (idx === -1 || idx === boundaries.length - 1) return null; // keine tiefere Klasse
 	  return boundaries[idx + 1];
 	}
-	function getMonthlyMultiplier(month = null) {
-	  // month: 1 = Januar, 12 = Dezember
-	  // Wenn kein Monat angegeben: aktuellen Monat holen (1-basiert)
-	  if (!month) month = new Date().getMonth() + 1;
+	function getMonthlyMultiplier(month) {
+	  // month: 1=Januar, ..., 12=Dezember
+	  // April–September (4–9): Start 0.9 → 1.0, linear, 6 Schritte
+	  // Oktober–März (10–3): Start 0.9 → 1.0, linear, 6 Schritte
 
-	  // Sommerhalbjahr: April (4) bis September (9)
 	  if (month >= 4 && month <= 9) {
-		// April = 0.90, Juli = 0.95, September = 1.00
-		if (month <= 7) {
-		  // April bis Juli
-		  // 4: 0.90, 5: x, 6: x, 7: 0.95
-		  const steps = 7 - 4;
-		  const value = 0.90 + ((month - 4) * (0.95 - 0.90) / steps);
-		  return Math.round(value * 1000) / 1000;
-		} else {
-		  // August (8) & September (9)
-		  // 7: 0.95, 9: 1.00
-		  const steps = 9 - 7;
-		  const value = 0.95 + ((month - 7) * (1.00 - 0.95) / steps);
-		  return Math.round(value * 1000) / 1000;
-		}
+		// April = 0, Mai = 1, ..., September = 5
+		return +(0.9 + ((month - 4) * (1.0 - 0.9) / 5)).toFixed(3);
 	  }
-
-	  // Winterhalbjahr: Oktober (10) bis März (3)
-	  // Oktober = 0.90, Dezember = 0.95, März = 1.00
-	  if (month >= 10 && month <= 12) {
-		// Oktober (10) bis Dezember (12)
-		const steps = 12 - 10;
-		const value = 0.90 + ((month - 10) * (0.95 - 0.90) / steps);
-		return Math.round(value * 1000) / 1000;
-	  } else {
-		// Januar (1) bis März (3)
-		// 12: 0.95, 3: 1.00
-		const steps = 3 - 0; // (1,2,3) => steps = 3 (bei month 1: step 1; month 2: step 2; month 3: step 3)
-		const value = 0.95 + ((month - 1) * (1.00 - 0.95) / (steps - 1));
-		return Math.round(value * 1000) / 1000;
+	  // Okt (10), Nov (11), Dez (12), Jan (1), Feb (2), Mär (3)
+	  let cycleOrder = [10, 11, 12, 1, 2, 3];
+	  let i = cycleOrder.indexOf(month);
+	  if (i !== -1) {
+		return +(0.9 + (i * (1.0 - 0.9) / 5)).toFixed(3);
 	  }
+	  return 1.0; // fallback
 	}
+
 
 	function getClassBoundaries(gender, value, ratingConfig) {
 	  const boundaries = ratingConfig.classBoundaries[gender];
