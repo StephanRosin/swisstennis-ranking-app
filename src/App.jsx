@@ -155,8 +155,6 @@ export default function SwissTennisRanking() {
 		let detected = null;
 		if (info["Klassierung"]) {
 		  detected = detectGenderAndClassByRang(info["Klassierung"], ratingConfig);
-		  console.log('Klassierung:', info["Klassierung"]);
-		  console.log('detected:', detected);
 		  if (detected && detected.gender) setGender(detected.gender);
 		}
 
