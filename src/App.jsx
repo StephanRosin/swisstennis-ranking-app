@@ -31,6 +31,44 @@ export default function SwissTennisRanking() {
 	  if (idx === -1 || idx === boundaries.length - 1) return null; // keine tiefere Klasse
 	  return boundaries[idx + 1];
 	}
+	function getMonthlyMultiplier(month = null) {
+	  // month: 1 = Januar, 12 = Dezember
+	  // Wenn kein Monat angegeben: aktuellen Monat holen (1-basiert)
+	  if (!month) month = new Date().getMonth() + 1;
+
+	  // Sommerhalbjahr: April (4) bis September (9)
+	  if (month >= 4 && month <= 9) {
+		// April = 0.90, Juli = 0.95, September = 1.00
+		if (month <= 7) {
+		  // April bis Juli
+		  // 4: 0.90, 5: x, 6: x, 7: 0.95
+		  const steps = 7 - 4;
+		  const value = 0.90 + ((month - 4) * (0.95 - 0.90) / steps);
+		  return Math.round(value * 1000) / 1000;
+		} else {
+		  // August (8) & September (9)
+		  // 7: 0.95, 9: 1.00
+		  const steps = 9 - 7;
+		  const value = 0.95 + ((month - 7) * (1.00 - 0.95) / steps);
+		  return Math.round(value * 1000) / 1000;
+		}
+	  }
+
+	  // Winterhalbjahr: Oktober (10) bis März (3)
+	  // Oktober = 0.90, Dezember = 0.95, März = 1.00
+	  if (month >= 10 && month <= 12) {
+		// Oktober (10) bis Dezember (12)
+		const steps = 12 - 10;
+		const value = 0.90 + ((month - 10) * (0.95 - 0.90) / steps);
+		return Math.round(value * 1000) / 1000;
+	  } else {
+		// Januar (1) bis März (3)
+		// 12: 0.95, 3: 1.00
+		const steps = 3 - 0; // (1,2,3) => steps = 3 (bei month 1: step 1; month 2: step 2; month 3: step 3)
+		const value = 0.95 + ((month - 1) * (1.00 - 0.95) / (steps - 1));
+		return Math.round(value * 1000) / 1000;
+	  }
+	}
 
 	function getClassBoundaries(gender, value, ratingConfig) {
 	  const boundaries = ratingConfig.classBoundaries[gender];
@@ -331,13 +369,13 @@ export default function SwissTennisRanking() {
       gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
       losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
     }
-
+    const multiplier = getMonthlyMultiplier();
     const expWins = wins.reduce(
-      (sum, m) => sum + Math.exp(parseFloat((m.ww*0.95) || 0)),
+      (sum, m) => sum + Math.exp(parseFloat((m.ww*multiplier) || 0)),
       0
     );
     const expLosses = losses.reduce(
-      (sum, m) => sum + Math.exp(-parseFloat((m.ww*0.95) || 0)),
+      (sum, m) => sum + Math.exp(-parseFloat((m.ww*multiplier) || 0)),
       0
     );
 
