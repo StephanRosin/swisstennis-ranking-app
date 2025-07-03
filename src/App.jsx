@@ -387,6 +387,8 @@ export default function SwissTennisRanking() {
   };
 
   const result = calculate();
+  const currentMonth = new Date().getMonth() + 1;
+	console.log(getMonthlyMultiplier(currentMonth));	
   const classBoundaries = getClassBoundaries(gender, parseFloat(result.total), ratingConfig);
 	let distanceToHigher = null;
 	let distanceToLower = null;
