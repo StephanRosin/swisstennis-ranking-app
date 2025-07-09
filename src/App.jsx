@@ -10,6 +10,7 @@ export default function SwissTennisRanking() {
   const [showImport, setShowImport] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [gender, setGender] = useState(null);
+  const currentMonth = new Date().getMonth() + 1;
 
   const infoLabels = [
     "Club",
@@ -313,7 +314,7 @@ export default function SwissTennisRanking() {
   };
 
   // Für die Berechnung werden NUR Matches gewertet, die bewertet werden sollen
-  const calculate = () => {
+  const calculate = (month = currentMonth) => {
     let relevantMatches = matches.filter(
       (m) =>
         m.result === "S" ||
@@ -345,7 +346,7 @@ export default function SwissTennisRanking() {
       gestrichenIdx = sortedLosses.slice(0, numStreich).map((m) => m.index);
       losses = losses.filter((m) => !gestrichenIdx.includes(m.index));
     }
-    const multiplier = getMonthlyMultiplier();
+    const multiplier = getMonthlyMultiplier(month);
     const expWins = wins.reduce(
       (sum, m) => sum + Math.exp(parseFloat((m.ww*multiplier) || 0)),
       0
@@ -382,8 +383,7 @@ export default function SwissTennisRanking() {
     };
   };
 
-  const result = calculate();
-  const currentMonth = new Date().getMonth() + 1;
+  const result = calculate(currentMonth);
   const classBoundaries = getClassBoundaries(gender, parseFloat(result.total), ratingConfig);
 	let distanceToHigher = null;
 	let distanceToLower = null;
